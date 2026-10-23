@@ -1,4 +1,4 @@
-// JSON round-trip test for Guitar Tab (v4 data, v5 app), plus the v5 step editor and MIDI export through the UI.
+// JSON round-trip test for Guitar Tab (v4 data, v6 app), plus the step editor, frets 0-22 and MIDI export through the UI.
 //
 // Builds a 3-track project through the real UI (different tunings, notes, a muted note, BPM 137, a loop,
 // mixed volume/mute/solo, idea notes, a non-default grid), exports it (captures the real download),
@@ -157,6 +157,29 @@ try {
   await click('#track-add');
   await openDrawer(); await select('#tuning', 'c-standard'); await closeDrawer();
   await place(3, 5, 3); await place(10, 0, 12);
+  // ---------- v6: frets 0-22 (fret 22 on the Eb string in bar 1: C std Eb3 = 51 -> 73) ----------
+  await page.$eval('.cell[data-col="5"][data-str="2"]', (b) => b.scrollIntoView({ inline: 'center', block: 'nearest' }));
+  await click('.cell[data-col="5"][data-str="2"]');
+  const neckRows = await page.$$eval('#neck .frow', (rs) => rs.map((r) => [Number(r.dataset.fret), r.querySelectorAll('.dots i').length]));
+  check('neck has frets 0-22 (23 rows)', neckRows.length === 23 && neckRows.every((r, i) => r[0] === i), JSON.stringify(neckRows.map((r) => r[0])));
+  const dotMap = Object.fromEntries(neckRows.filter((r) => r[1]));
+  check('inlays: 3, 5, 7, 9, double 12, then 17, 19, 21 (none at 15)', JSON.stringify(dotMap) === JSON.stringify({ 3: 1, 5: 1, 7: 1, 9: 1, 12: 2, 17: 1, 19: 1, 21: 1 }), JSON.stringify(dotMap));
+  await click('.frow[data-fret="22"]');
+  const f22 = await page.evaluate(() => ({ lib: window.__guitarTab.library, pre: window.TabAudio.lastNote(), roll: (document.querySelector('#picker-roll .rc.now.sel b') || {}).textContent,
+    lit: (document.querySelector('#neck .frow.on') || {}).dataset?.fret, ascii: window.__guitarTab.toAscii() }));
+  const t3now = project(f22.lib).tracks[2];
+  check('fret 22 placed: stored, lit, plays 73 (C std Eb 51 + 22)', t3now.notes.some((n) => n.string === 3 && n.fret === 22 && n.startTick === 1200) && f22.lit === '22' && f22.pre.midi === 73, JSON.stringify(f22.pre));
+  check('fret 22 shows in the mini roll and the text tab', f22.roll === '22' && /\nEb\|[^\n]*-22-/.test(f22.ascii), f22.roll + ' / ' + f22.ascii.slice(0, 400));
+  for (const [w, h] of [[390, 650], [360, 640]]) {
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); await sleep(250);
+    const sm = await page.evaluate(() => { const sh = document.getElementById('picker'), nk = document.getElementById('neck'), r22 = nk.querySelector('.frow[data-fret="22"]').getBoundingClientRect(), nr = nk.getBoundingClientRect();
+      return { sh: sh.scrollHeight, ch: sh.clientHeight, top: sh.getBoundingClientRect().top, page: document.scrollingElement.scrollHeight - innerHeight, nScroll: nk.scrollHeight > nk.clientHeight, row: r22.height, inView: r22.top >= nr.top - 1 && r22.bottom <= nr.bottom + 1 }; });
+    check(`${w}x${h}: sheet fits with no scroll, only the neck scrolls (rows >= 24px), lit fret 22 scrolled into view`, sm.sh <= sm.ch + 1 && sm.top >= 0 && sm.page <= 0 && sm.nScroll && sm.row >= 24 && sm.inView, JSON.stringify(sm));
+  }
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); await sleep(250);
+  const big = await page.evaluate(() => { const sh = document.getElementById('picker'), nk = document.getElementById('neck'); return { fits: sh.scrollHeight <= sh.clientHeight + 1, nScroll: nk.scrollHeight > nk.clientHeight + 1 }; });
+  check('390x844: all 23 frets on screen, no scrolling at all', big.fits && !big.nScroll, JSON.stringify(big));
+  await click('#picker-done');
   check('track limit: "+ Track" is gone at 3 tracks', !(await page.$('#track-add')));
 
   // Mixer: T1 solo + vol 55, T2 mute, T3 solo + vol 30  ->  audible = T1, T3
@@ -170,9 +193,9 @@ try {
   await select('#grid-select', 'sixteenth');
 
   const original = project(await gt('window.__guitarTab.library'));
-  check('built: 3 tracks, 3 tunings, 8 notes, BPM 137, loop bar 2, grid 1/16',
+  check('built: 3 tracks, 3 tunings, 9 notes (one at fret 22), BPM 137, loop bar 2, grid 1/16',
     original.tracks.length === 3 && new Set(original.tracks.map((t) => t.tuning.id)).size === 3 &&
-    original.tracks.reduce((a, t) => a + t.notes.length, 0) === 8 && original.bpm === 137 &&
+    original.tracks.reduce((a, t) => a + t.notes.length, 0) === 9 && original.bpm === 137 &&
     original.loop.enabled && original.loop.startMeasure === 2 && original.loop.endMeasure === 2 && original.grid.value === 'sixteenth',
     JSON.stringify({ tracks: original.tracks.length, bpm: original.bpm, loop: original.loop, grid: original.grid }));
   check('mixer as set (T1 solo 55, T2 muted, T3 solo 30)', JSON.stringify(original.tracks.map((t) => [t.volume, t.mute, t.solo])) === JSON.stringify([[55, false, true], [80, true, false], [30, false, true]]),
@@ -188,6 +211,7 @@ try {
   check('file header: schema jlr-guitar-tab v4, ppq 480, 1 project', exported.schema === 'jlr-guitar-tab' && exported.schemaVersion === 4 && exported.ppq === 480 && exported.projects.length === 1);
   const d1 = diff(comparable(original), comparable(exported.projects[0]));
   check('exported file equals the project in the app', !d1, d1);
+  check('exported .json keeps fret 22', exported.projects[0].tracks[2].notes.some((n) => n.fret === 22 && n.string === 3));
 
   // ---------- MIDI export through the UI: the sheet, All tracks, one track ----------
   const ticksOf = (tr) => { let t = 0; return tr.map((e) => ({ ...e, tick: (t += e.deltaTime) })); };
@@ -213,6 +237,7 @@ try {
     check('All tracks .mid: every note at its tick and pitch (open string + fret), per track', JSON.stringify(got) === JSON.stringify(want), JSON.stringify(got) + ' vs ' + JSON.stringify(want));
     check('All tracks .mid: channels 1-3, CC7 from volume (55, 80, 30)', m.tracks.slice(1).every((tr, i) => onsOf(tr).every((e) => e.channel === i)) &&
       JSON.stringify(m.tracks.slice(1).map((tr) => tr.find((e) => e.type === 'controller' && e.controllerType === 7).value)) === JSON.stringify([55, 80, 30].map((v) => Math.round(v * 127 / 100))));
+    check('All tracks .mid: fret 22 exported as pitch 73 on track 3', onsOf(m.tracks[3]).some((e) => e.noteNumber === 73 && e.tick === 1200));
     check('All tracks .mid: muted note velocity 30', onsOf(m.tracks[1]).filter((e) => e.velocity === 30).length === 1);
   }
   await click('#export-midi');
@@ -240,6 +265,7 @@ try {
   const back = project(await gt('window.__guitarTab.library'));
   const d2 = diff(comparable(original), comparable(back));
   check('imported project deep-equals the original (tracks, notes, BPM, loop, grid, tunings, mixer, idea)', !d2, d2);
+  check('fret 22 survives export -> clear -> import', project(await gt('window.__guitarTab.library')).tracks[2].notes.some((n) => n.fret === 22 && n.string === 3 && n.startTick === 1200));
   check('idea field shows the imported text', (await page.$eval('#idea', (e) => e.value)) === original.idea);
   check('track strip shows 3 tracks, T2 drawn as silent', (await page.$$eval('.trk', (r) => r.map((x) => x.classList.contains('silent')))).join() === 'false,true,false');
 

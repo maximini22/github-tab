@@ -28,7 +28,7 @@ On first use, a three-line hint explains tapping, arming and looping. **Got it**
 
 ## Writing notes
 
-- **Tap a cell** in a lane, and a vertical fretboard opens for that string and step. Tap a fret (0–16) to place it. **x Muted** places a muted (dead) note, and **Clear** removes the note.
+- **Tap a cell** in a lane, and a vertical fretboard opens for that string and step. Tap a fret (0–22) to place it. **x Muted** places a muted (dead) note, and **Clear** removes the note.
 - **Tap a placed note's fret again** (open and Muted included) to remove it. Tapping a different fret replaces it.
 - **Next step ›** and **‹ Back step** move one grid step with the picker still open, so you can pencil in a whole bar without closing it. **Done** closes the picker. See [The step editor](#the-step-editor).
 - **The edit cursor** is the teal outline. It shows where the next note goes. Arrows **‹ ›** move it one grid step. While stopped, the playhead follows the cursor, so Play starts where you're working.
@@ -40,7 +40,7 @@ On first use, a three-line hint explains tapping, arming and looping. **Got it**
 
 The fret picker doubles as a screen you can stay on and step through whole bars:
 
-- **Left:** the vertical neck, open string (0) at the top down to fret 16, inlays at 3, 5, 7, 9 and a double dot at 12.
+- **Left:** the vertical neck, open string (0) at the top down to fret 22. Dots at 3, 5, 7, 9, a double dot at 12, then 17, 19 and 21 (15 is left plain on purpose).
 - **Right, top:** the six string buttons, high at the top and low at the bottom. The string you're on is **yellow**.
 - **Right, under x Muted / Clear:**
   - **‹ Back step** and **Next step ›** move one grid step (the Grid setting decides how far).
@@ -50,7 +50,7 @@ The fret picker doubles as a screen you can stay on and step through whole bars:
 - **Mini tab roll (top of the sheet):** the current bar on all six strings, laid out like the main grid. The armed track's frets show in full, and the other tracks show faint in their colours, so you can see what else is going on. The current step is the lit column, and your string's row is yellow. Tap any cell in the roll to jump there (step and string).
 - **↶ / ↷** in the sheet's header are Undo and Redo, so you can fix a slip without closing it.
 - While stopped, the playhead follows every move, so Play starts where you're working.
-- The neck shrinks to fit the screen, so the whole sheet shows without scrolling, even on a short phone screen with the browser's bars showing. It has been checked at 390×844, 390×650 and 360×640.
+- The sheet always fits the screen without scrolling, checked at 390×844, 390×650 and 360×640. The fret rows shrink to fit, down to a 24px minimum so they stay easy to tap. On a tall screen (390×844) all 23 frets show at once. On a shorter one, or with the browser's bars showing, only the neck scrolls inside the sheet: swipe it to reach the top or bottom frets. When the step already has a note, the neck scrolls so that fret is in view.
 
 ## Tracks (up to 3)
 
@@ -176,9 +176,10 @@ Use this when you want to be sure an export brings everything back:
 5. Plays the song and checks that notes were scheduled from **every audible track**, with the right pitches and gains, and none from the muted track.
 6. Checks the 3-track import limit, Custom (imported) tunings, grid migration and a real v3 export (`tests/fixtures/v3-project.json`).
 7. Step editor: **‹ Back step** / **Next step ›** / bar jumps move the cursor and playhead, the selected string is yellow on the chip and in the mini roll, the roll shows the bar's notes and jumps on tap, the sheet fits 390×844 without scrolling, and Undo/Redo work inside it.
-8. MIDI: opens the export sheet, downloads **All tracks** and a single track, and parses both files back (tracks, names, tempo, loop markers, every note's tick and pitch, channels, CC7, muted velocity).
+8. Frets 0–22: the neck has 23 rows with the right dots (none at 15), fret 22 is placed, plays, and shows in the roll and text tab. The picker fits at 390×844 with no scrolling, and at 390×650 and 360×640 only the neck scrolls and the lit fret is kept in view. Fret 22 survives the JSON round trip and exports as the right MIDI pitch.
+9. MIDI: opens the export sheet, downloads **All tracks** and a single track, and parses both files back (tracks, names, tempo, loop markers, every note's tick and pitch, channels, CC7, muted velocity).
 
-`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules and file names. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
+`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, and frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23). `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
 ```sh
 cd tests
@@ -225,7 +226,7 @@ When a keyboard is attached:
 | Shift+Ctrl/⌘+Z or Ctrl+Y | Redo |
 | Esc | Close the picker or menu |
 
-With the picker open, type a fret number (0–16), **x** for muted, or Backspace/Delete to clear. ← → step back and forward, and ↑ ↓ change string, without closing it.
+With the picker open, type a fret number (0–22; for two digits, type them quickly), **x** for muted, or Backspace/Delete to clear. ← → step back and forward, and ↑ ↓ change string, without closing it.
 
 ## File format (schemaVersion 4)
 
@@ -261,8 +262,8 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 }
 ```
 
-- **Strings:** `string` runs from 1 (high) to 6 (low). `tuning.midi` lists the open strings in that order. **Pitch = `tuning.midi[string − 1] + fret`.**
-- **Notes:** `fret` is 0–16, and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
+- **Strings:** `string` runs from 1 (high) to 6 (low). `tuning.midi` lists the open strings in that order. Each is a MIDI note from 0 to 105, so even fret 22 stays inside MIDI's 0–127 range. **Pitch = `tuning.midi[string − 1] + fret`.**
+- **Notes:** `fret` is 0–22 (0–16 before v6; older files are a subset, so the schemaVersion stays 4), and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.
 - **Not in files:** the playhead position, which is kept per project in this browser only.
 - **Limits:** 3 tracks (larger imports keep the first 3), 999 bars, 20,000 notes per track, a 120-character title, 60-character track names and 500-character idea notes.

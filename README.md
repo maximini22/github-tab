@@ -10,7 +10,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 - Up to **3 tracks** on one grid. The armed track is drawn in full and the others show faint and colour-coded.
 - **Layered playback** with mute, solo and volume per track.
-- **Six tunings** per track.
+- **Six tunings** per track, and frets 0–22.
 - A DAW-style transport, a bar|beat ruler, a loop brace, and 100 undo steps.
 - Fits a phone screen with no page scroll. Only the tab grid scrolls sideways.
 - Auto-save, plus Export and Import as `.json`.
@@ -20,7 +20,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 ## Quick start
 
 1. Open the app and tap **Got it** on the hint.
-2. Tap a cell in a string lane, then tap a fret (0–16) or **x Muted**. Use **‹ Back step / Next step ›** and **« Bar / Bar »** to step through bars, then tap **Done**.
+2. Tap a cell in a string lane, then tap a fret (0–22) or **x Muted**. Use **‹ Back step / Next step ›** and **« Bar / Bar »** to step through bars, then tap **Done**.
 3. Press **Play** (or Space). Set **BPM** with − and +.
 4. Add a part with **+ Track**, then tap its name to arm it and write on it.
 5. Drag across bar numbers in the ruler to loop a section.
@@ -57,7 +57,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 | Home | Back to start |
 | L | Loop on/off |
 | ← → / ↑ ↓ | Move one step / move between strings |
-| Enter | Open the fret picker (type 0–16, x, or Backspace) |
+| Enter | Open the fret picker (type 0–22, x, or Backspace) |
 | Ctrl/⌘+Z, Shift+Ctrl/⌘+Z or Ctrl+Y | Undo / redo |
 | Esc | Close the picker or menu |
 

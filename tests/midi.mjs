@@ -133,6 +133,25 @@ let threw = false; try { TabMidi.build(p, { mode: 'nope' }); } catch (e) { threw
 const nopos = parse(TabMidi.build(p, { posText: false }));
 ok(!nopos.tracks[1].some(e => e.type === 'text'), 'posText:false drops the neck-position text');
 
+// ---- frets 17-22 (v6): pitch, position text, import accepts 22 and rejects 23 ----
+eq(M.MAX_FRET, 22, 'model allows frets 0-22');
+{
+  const q = M.newProject('High frets'); const t = q.tracks[0]; t.tuning = M.tuningFromId('e-standard');
+  const hn = (s, f, tk) => ({ string: s, fret: f, startTick: tk, durationTicks: 0, techniques: [] });
+  t.notes = [17, 18, 19, 20, 21, 22].map((f, i) => hn(1, f, i * 240)).concat([hn(6, 22, 1440), hn(3, 22, 1680)]);
+  M.recompute(q);
+  const r = parse(TabMidi.build(q));
+  eq(notesOf(r.tracks[1]).map(x => x.pitch), [81, 82, 83, 84, 85, 86, 62, 77], 'frets 17-22 on high e (64+f), fret 22 on low E (40+22=62) and G (55+22=77)');
+  eq(r.tracks[1].filter(e => e.type === 'text').map(e => e.text), ['s1f17', 's1f18', 's1f19', 's1f20', 's1f21', 's1f22', 's6f22', 's3f22'], 'neck-position text for two-digit frets (s1f22, s6f22)');
+  const file = (proj) => JSON.parse(JSON.stringify({ schema: M.SCHEMA, schemaVersion: M.SCHEMA_VERSION, ppq: M.PPQ, kind: 'project', projects: [proj] }));
+  const back = M.parseFile(file(q));
+  ok(!back.error && JSON.stringify(back.projects[0].tracks[0].notes.map(n => n.fret)) === JSON.stringify(t.notes.map(n => n.fret)), 'JSON with frets 17-22 imports unchanged (schemaVersion ' + M.SCHEMA_VERSION + ')');
+  const bad = file(q); bad.projects[0].tracks[0].notes[5].fret = 23;
+  ok(/fret must be 0 to 22/.test(M.parseFile(bad).error || ''), 'fret 23 is rejected on import: ' + M.parseFile(bad).error);
+  const v4old = file(q); v4old.projects[0].tracks[0].notes = v4old.projects[0].tracks[0].notes.map(n => ({ ...n, fret: n.fret - 6 }));
+  ok(!M.parseFile(v4old).error, 'an older file with frets up to 16 still imports');
+}
+
 // ---- samples ----
 if (process.env.SAMPLE_DIR) {
   const dir = process.env.SAMPLE_DIR; fs.mkdirSync(dir, { recursive: true });
