@@ -1,5 +1,5 @@
 /* Minimal offline cache for the app shell. Bump VERSION when shell files change. */
-var VERSION = 'guitar-tab-v2';
+var VERSION = 'guitar-tab-v3';
 var SHELL = [
   './',
   './index.html',

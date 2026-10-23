@@ -67,15 +67,17 @@
     src.start(when);
     src.stop(Math.min(when + src.buffer.duration, end + 0.4));
   }
-  function preview(midi, muted) { unlock(); if (!ctx) return; note(midi, ctx.currentTime + 0.01, 0.9, { muted: muted }); }
+  var last = null;
+  function preview(midi, muted) { last = { midi: midi, muted: !!muted }; unlock(); if (!ctx) return; note(midi, ctx.currentTime + 0.01, 0.9, { muted: muted }); }
 
   // Scheduler: getSteps() returns [{seconds-free step}] lazily so BPM/edits apply on the next step.
   var timer = null, playing = null;
   function play(opts) {
     stop();
     unlock(); var c = ensure(); if (!c) return false;
-    // opts: { count, stepAt(i) -> {ticks, notes:[{midi, muted}]}, bpm(), ppq, loop, onStep(i|null) }
-    playing = { opts: opts, i: 0, next: c.currentTime + 0.08, queue: [], raf: 0 };
+    // opts: { count, startAt, stepAt(i) -> {ticks, notes:[{midi, muted, offset (ticks into the step), ticks (length)}]}, bpm(), ppq, loop, onStep(i|null) }
+    playing = { opts: opts, i: Math.max(0, Math.min((opts.count || 1) - 1, opts.startAt || 0)), next: c.currentTime + 0.08, queue: [], raf: 0 };
+    log = []; t0 = playing.next;
     timer = setInterval(tick, 25);
     tick();
     var draw = function () {
@@ -101,15 +103,20 @@
       }
       var st = o.stepAt(P.i);
       var secs = st.ticks / o.ppq * 60 / o.bpm();
-      st.notes.forEach(function (n) { note(n.midi, P.next, secs, { muted: n.muted, gain: st.notes.length > 2 ? 0.8 : 1 }); });
+      var spt = 60 / o.bpm() / o.ppq; // seconds per tick
+      st.notes.forEach(function (n) {
+        if (log.length < 500) log.push({ midi: n.midi, muted: !!n.muted, at: +(P.next + (n.offset || 0) * spt - t0).toFixed(4), step: P.i });
+        note(n.midi, P.next + (n.offset || 0) * spt, (n.ticks || st.ticks) * spt, { muted: n.muted, gain: st.notes.length > 2 ? 0.8 : 1 });
+      });
       P.queue.push({ t: P.next, i: P.i });
       P.next += secs; P.i++;
     }
   }
+  var log = [], t0 = 0; // what was scheduled, in seconds from the start of playback (for tests)
   function stop() {
     if (timer) { clearInterval(timer); timer = null; }
     if (playing) { cancelAnimationFrame(playing.raf); playing = null; }
   }
   window.TabAudio = { unlock: unlock, preview: preview, play: play, stop: stop, isPlaying: function () { return !!playing; },
-    state: function () { return ctx ? ctx.state : 'none'; } };
+    lastNote: function () { return last; }, scheduled: function () { return log.slice(); }, state: function () { return ctx ? ctx.state : 'none'; } };
 })();

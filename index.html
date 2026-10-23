@@ -71,31 +71,43 @@
       <span class="card-h">Editor</span>
       <span class="col-info" id="col-info"></span>
     </div>
-    <p class="hint">Tap a string at a step to pick a fret. Under the tab: note length (W whole, H half, Q quarter, E eighth, S sixteenth, a dot means dotted), beams group a beat, and a 3 bracket marks a triplet.</p>
-    <div class="editor-wrap" id="editor-wrap">
-      <div class="editor" id="editor" role="grid" aria-label="Tab editor"></div>
-    </div>
-    <span class="sec-lab mt">Step length</span>
-    <div class="chips dur-chips" id="dur-chips" role="radiogroup" aria-label="Note length"></div>
+    <p class="hint">Grid sets the step size for the whole project, like snap in a DAW: every column is one grid step and Next moves one step. Changing it never moves or deletes notes; a note that sits between grid lines shows an amber dot. Tap the timeline to move the green playhead (drag to scrub); tap a string to pick a fret, the teal box is where you are editing.</p>
+    <span class="sec-lab">Grid / snap</span>
+    <div class="chips dur-chips" id="dur-chips" role="radiogroup" aria-label="Grid resolution"></div>
     <div class="chips mt-s">
       <button type="button" class="chip" id="dot-toggle" aria-pressed="false">Dotted</button>
       <button type="button" class="chip" id="trip-toggle" aria-pressed="false">Triplet</button>
     </div>
+    <div class="ruler-wrap mt" id="ruler-wrap" aria-label="Timeline: tap a grid step to move the playhead, drag to scrub">
+      <div class="ruler" id="ruler"></div>
+    </div>
+    <div class="editor-wrap" id="editor-wrap">
+      <div class="editor" id="editor" role="grid" aria-label="Tab editor"></div>
+    </div>
     <div class="grid2 mt">
       <button type="button" class="btn sm" id="prev-col">‹ Prev</button>
       <button type="button" class="btn sm" id="next-col">Next ›</button>
-      <button type="button" class="btn sm" id="add-col">+ Add step</button>
-      <button type="button" class="btn sm warn" id="del-col">− Remove step</button>
+      <button type="button" class="btn sm" id="add-col">+ Insert step</button>
+      <button type="button" class="btn sm warn" id="del-col">− Delete step</button>
       <button type="button" class="btn sm" id="add-measure">+ Add measure</button>
-      <button type="button" class="btn sm" id="clear-col">Clear step</button>
+      <button type="button" class="btn sm warn" id="del-measure">− Last measure</button>
     </div>
+    <button type="button" class="btn sm wide mt-s" id="clear-col">Clear this step</button>
   </section>
 
   <!-- Playback -->
   <section class="card">
     <span class="card-h">Play</span>
-    <div class="row">
-      <button type="button" class="btn go grow" id="play-btn">▶ Play</button>
+    <div class="transport">
+      <button type="button" class="btn tbtn" id="play-start" aria-label="Play from start">
+        <span class="ico" aria-hidden="true">⏮</span><span>From start</span></button>
+      <button type="button" class="btn go tbtn" id="play-btn" aria-label="Play from playhead">
+        <span class="ico" aria-hidden="true">▶</span><span id="play-label">Play</span></button>
+      <button type="button" class="btn tbtn" id="stop-btn" aria-label="Stop">
+        <span class="ico" aria-hidden="true">■</span><span>Stop</span></button>
+    </div>
+    <div class="row mt-s">
+      <span class="ph-info grow" id="ph-info"></span>
       <div class="bpm">
         <button type="button" class="btn sm" id="bpm-down" aria-label="Slower">−</button>
         <label class="bpm-val"><input id="bpm" class="field" type="number" inputmode="numeric" min="30" max="300" step="1" aria-label="BPM"><small>BPM</small></label>
@@ -111,7 +123,7 @@
       <button type="button" class="btn sm" id="loop-start">⟦ Start at this measure</button>
       <button type="button" class="btn sm" id="loop-end">End at this measure ⟧</button>
     </div>
-    <p class="hint">Plays from the selected step, or round the loop when it is on. Tapping a fret plays it too.</p>
+    <p class="hint">Play resumes from the playhead (from the loop start if the playhead is outside the loop). From start goes to the loop start, or the top of the track when the loop is off. Stop leaves the playhead where it stopped; press Stop again to return to the start.</p>
   </section>
 
   <!-- Text tab -->
@@ -152,11 +164,11 @@
     <div class="neck" id="neck" role="group" aria-label="Frets 0 to 16"></div>
     <div class="picker-side">
       <span class="sec-lab">String</span>
-      <div class="pstrings" id="picker-strings" role="radiogroup" aria-label="String"></div>
+      <div class="pstrings" id="picker-strings" role="radiogroup" aria-label="String, high e at the top, low E at the bottom"></div>
       <button type="button" class="btn sm" id="pick-mute">x Muted</button>
       <button type="button" class="btn sm" id="pick-clear">Clear</button>
-      <span class="sec-lab mt">Length</span>
-      <div class="pdur" id="picker-dur" role="radiogroup" aria-label="Note length"></div>
+      <p class="picker-tip" id="picker-tip" aria-live="polite"></p>
+      <p class="picker-grid" id="picker-grid"></p>
       <button type="button" class="btn sm" id="picker-next">Next step ›</button>
     </div>
   </div>
