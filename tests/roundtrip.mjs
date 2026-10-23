@@ -59,7 +59,7 @@ function project(lib) { return lib.projects.find((p) => p.id === lib.activeProje
 function comparable(p) { // what must survive a round trip (updatedAt is a save stamp)
   return JSON.parse(JSON.stringify({ id: p.id, title: p.title, bpm: p.bpm, grid: p.grid, timeSignature: p.timeSignature, lengthTicks: p.lengthTicks,
     loop: p.loop, idea: p.idea, createdAt: p.createdAt, activeTrackId: p.activeTrackId,
-    tracks: p.tracks.map((t) => ({ id: t.id, name: t.name, tuning: t.tuning, volume: t.volume, mute: t.mute, solo: t.solo, notes: t.notes })) }));
+    tracks: p.tracks.map((t) => ({ id: t.id, name: t.name, tuning: t.tuning, style: t.style, volume: t.volume, mute: t.mute, solo: t.solo, notes: t.notes })) }));
 }
 function diff(a, b, at = '') {
   if (JSON.stringify(a) === JSON.stringify(b)) return null;
@@ -208,7 +208,7 @@ try {
   const file = await waitDownload(had);
   check('export downloaded a .json file', !!file, 'no file in ' + DL);
   const exported = JSON.parse(fs.readFileSync(file, 'utf8'));
-  check('file header: schema jlr-guitar-tab v4, ppq 480, 1 project', exported.schema === 'jlr-guitar-tab' && exported.schemaVersion === 4 && exported.ppq === 480 && exported.projects.length === 1);
+  check('file header: schema jlr-guitar-tab v5, ppq 480, 1 project', exported.schema === 'jlr-guitar-tab' && exported.schemaVersion === 5 && exported.ppq === 480 && exported.projects.length === 1);
   const d1 = diff(comparable(original), comparable(exported.projects[0]));
   check('exported file equals the project in the app', !d1, d1);
   check('exported .json keeps fret 22', exported.projects[0].tracks[2].notes.some((n) => n.fret === 22 && n.string === 3));
@@ -291,6 +291,7 @@ try {
   p4.tracks.push({ ...JSON.parse(JSON.stringify(p4.tracks[0])), id: 'extra-4', name: 'Extra' });
   p4.tracks[0].tuning = { id: 'nashville', name: 'Nashville', midi: [64, 59, 67, 62, 57, 52] };
   p4.grid = { value: 'eighth', dotted: true };
+  four.schemaVersion = 4; p4.tracks.forEach((t) => { delete t.style; }); // a v7 (schema 4) file: the style lives on the project grid
   const f4 = path.join(DL, 'four-tracks.json'); fs.writeFileSync(f4, JSON.stringify(four));
   await importPath(f4, 'merge');
   const warn = await page.$eval('#modal-body', (e) => e.textContent);
@@ -300,7 +301,7 @@ try {
   const got4 = lib4.projects.find((p) => p.id === 'four-tracks');
   check('import keeps the first 3 of 4 tracks and warns', got4 && got4.tracks.length === 3 && modalShown && /kept the first 3/.test(warn), warn);
   check('unknown tuning kept as "Custom (imported)" with its MIDI notes', got4 && got4.tracks[0].tuning.id === 'custom' && JSON.stringify(got4.tracks[0].tuning.midi) === '[64,59,67,62,57,52]', got4 && JSON.stringify(got4.tracks[0].tuning));
-  check('v7: dotted grid kept as value + style (1/8 + Dotted), notes unmoved', got4 && JSON.stringify(got4.grid) === JSON.stringify({ value: 'eighth', dotted: true }) &&
+  check('v8: a v4 file\'s dotted grid becomes value 1/8 + every track Dotted, notes unmoved', got4 && JSON.stringify(got4.grid) === JSON.stringify({ value: 'eighth' }) && got4.tracks.every((t) => t.style === 'dotted') &&
     JSON.stringify(got4.tracks.map((t) => t.notes.map((n) => n.startTick))) === JSON.stringify(p4.tracks.slice(0, 3).map((t) => t.notes.map((n) => n.startTick))));
 
   const v3file = path.join(HERE, 'fixtures', 'v3-project.json');
@@ -333,11 +334,12 @@ try {
   for (const st of ['plain', 'dotted', 'triplet']) for (let i = 0; i < 7; i++) {
     await select('#grid-select', VALS[i]); await setStyle(st);
     const r = await page.evaluate(() => { const c = window.__guitarTab.cells(), lib = window.__guitarTab.library, p = lib.projects.find((x) => x.id === lib.activeProjectId);
-      return { len: c[0].len, second: c[1] ? c[1].start : null, grid: p.grid, saved: JSON.parse(localStorage.getItem('jlr-guitar-tab:library') || 'null'), label: document.querySelector('.r-lab .r-g').textContent }; });
+      return { len: c[0].len, second: c[1] ? c[1].start : null, grid: window.__guitarTab.grid(), pgrid: p.grid, style: p.tracks[0].style, saved: JSON.parse(localStorage.getItem('jlr-guitar-tab:library-v5') || 'null'), v4: JSON.parse(localStorage.getItem('jlr-guitar-tab:library') || 'null'), label: document.querySelector('.r-lab .r-g').textContent }; });
     const want = Math.min(TK[st][i], 1920), lab = FRS[i] + (st === 'dotted' ? '.' : st === 'triplet' ? 'T' : '');
-    const savedP = r.saved ? r.saved.projects.find((x) => x.id === r.saved.activeProjectId) : null;
+    const savedP = r.saved ? r.saved.projects.find((x) => x.id === r.saved.activeProjectId) : null, v4P = r.v4 ? r.v4.projects.find((x) => x.id === r.v4.activeProjectId) : null;
     check(`v7 grid ${lab}: step = ${TK[st][i]} ticks` + (TK[st][i] > 1920 ? ' (1 step a 4/4 bar)' : ''), r.len === want && r.second === want && styleOf(r.grid) === st && r.grid.value === VALS[i] && r.label === lab &&
-      (!savedP || JSON.stringify(savedP.grid) === JSON.stringify(r.grid)), JSON.stringify({ ...r, saved: savedP && savedP.grid }));
+      JSON.stringify(r.pgrid) === JSON.stringify({ value: VALS[i] }) && r.style === st && savedP && JSON.stringify(savedP.grid) === JSON.stringify({ value: VALS[i] }) && savedP.tracks[0].style === st &&
+      r.v4.schemaVersion === 4 && v4P && JSON.stringify(v4P.grid) === JSON.stringify(r.grid) && v4P.tracks.every((t) => !('style' in t)), JSON.stringify({ ...r, saved: savedP && savedP.grid, v4: v4P && v4P.grid }));
   }
   // toggles: exclusive, tap active = plain, undo/redo
   await select('#grid-select', 'eighth'); await setStyle('plain');
@@ -361,7 +363,7 @@ try {
   check('v7 rhythm: 8th triplets = E³, one beam start/mid/end, "3" on the middle, no bracket', JSON.stringify(rh.slice(0, 3).map((g) => [g.len, g.beams, g.beam, g.tp, g.num, g.bracket])) ===
     JSON.stringify([['E³', 1, 'start', 'start', false, false], ['E³', 1, 'mid', 'mid', true, false], ['E³', 1, 'end', 'end', false, false]]), JSON.stringify(rh.slice(0, 3)));
   const ascii = await gt('window.__guitarTab.toAscii()');
-  check('v7 text tab: header says grid 1/8T and the len row names E³', /grid 1\/8T/.test(ascii) && /E³/.test(ascii), ascii.slice(0, 300));
+  check('v8 text tab: header says grid 1/8, the track line says 1/8T and the len row names E³', /grid 1\/8( |$)/m.test(ascii) && /\[Guitar 1\] [^\n]*· 1\/8T/.test(ascii) && /E³/.test(ascii), ascii.slice(0, 300));
   await select('#grid-select', 'quarter'); // 1/4T, 6 steps a bar; bar 2 = steps 6, 7, 8
   await page.$eval('.cell[data-col="6"][data-str="1"]', (b) => b.scrollIntoView({ inline: 'center', block: 'nearest' }));
   await click('.cell[data-col="6"][data-str="1"]');
@@ -393,7 +395,7 @@ try {
     if (!(await page.$eval('#hint', (h) => h.hidden))) await click('#hint-ok');
     await importPath(fj, 'replace');
     const back2 = project(await gt('window.__guitarTab.library')), dd = diff(comparable(orig), comparable(back2));
-    check(`v7 JSON round trip: ${st} grid ${JSON.stringify(orig.grid)} exported (schema v4) and imported identical`, ej.schemaVersion === 4 && JSON.stringify(ej.projects[0].grid) === JSON.stringify(orig.grid) && !dd &&
+    check(`v8 JSON round trip: grid ${JSON.stringify(orig.grid)} + ${st} track exported (schema v5) and imported identical`, ej.schemaVersion === 5 && JSON.stringify(ej.projects[0].grid) === JSON.stringify(orig.grid) && ej.projects[0].tracks[0].style === st && !dd &&
       (await pressed()) === (st === 'dotted' ? 'true,false' : 'false,true'), dd || JSON.stringify(ej.projects[0].grid));
   }
 
@@ -448,7 +450,7 @@ try {
   const tapDn = await bpmNow();
   check('v7 BPM: a tap on + is exactly +1 (90 -> 91, one undo step), a tap on − is exactly −1 (-> 90)', tapUp === 91 && tapDn === 90 && h1 === h0 + 1, `${tapUp} ${tapDn} undo ${h0}->${h1}`);
   // hold + from 90 until 150
-  await page.evaluate(() => { window.__sets = 0; const o = Storage.prototype.setItem; if (!window.__wrapped) { window.__wrapped = 1; Storage.prototype.setItem = function () { window.__sets++; return o.apply(this, arguments); }; } });
+  await page.evaluate(() => { window.__sets = 0; const o = Storage.prototype.setItem; if (!window.__wrapped) { window.__wrapped = 1; Storage.prototype.setItem = function (k) { if (k === 'jlr-guitar-tab:library-v5') window.__sets++; return o.apply(this, arguments); }; } });
   h0 = await hist0();
   await page.mouse.move(ux, uy); await page.mouse.down();
   await page.waitForFunction(() => Number(document.getElementById('bpm').value) >= 150, { polling: 'raf', timeout: 8000 });

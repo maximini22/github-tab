@@ -16,6 +16,9 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - Auto-save, plus Export and Import as `.json`.
 - **MIDI export (.mid):** all tracks in one Type 1 file (one lane per track), or one track on its own.
 - **Step editor:** the fret picker has Back/Next step, bar jumps, a yellow highlight on the selected string and a mini tab roll of the bar.
+- **Per-track feel:** each track has its own note style (plain, Dotted or Triplet), so a straight rhythm part and a triplet lead can share one project.
+- **Chord library:** 22 common shapes (open, power, barre and more) as chord boxes. Preview one on the neck and in the bar, then **Drop into measure** as a strum or an arpeggio. One Undo takes it back.
+- **Share project** sends the project to another app, or falls back to copying the tab as text or saving the file.
 
 ## Quick start
 
@@ -35,10 +38,17 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Grid, BPM and tunings
 
-- **Grid** is the note value of one step: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32 or 1/64. Next to it, the **· | 3** switch makes the step **Dotted** (1.5×) or a **Triplet** (3 in the time of 2). Tap one to turn it on and the other off. Tap the lit one again to go back to plain. So 1/8 + Triplet = 160 ticks a step, and 1/16 + Dotted = 180. Changing either never moves or deletes notes.
+- **Grid** is the note value of one step, for the whole project: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32 or 1/64. Next to it, the **· | 3** switch makes the step **Dotted** (1.5×) or a **Triplet** (3 in the time of 2) **for the armed track only**. The small number in front of the switch shows which track it applies to, and a track with a style shows **·** or **3** by its name. Tap one to turn it on and the other off. Tap the lit one again to go back to plain. So 1/8 + Triplet = 160 ticks a step, and 1/16 + Dotted = 180. BPM, time signature and the grid value stay project-wide. Changing any of them never moves or deletes notes.
 - **Note length** is automatic: a note lasts until the track's next note, up to one bar. The `len` row shows W, H, Q, E, S, T (32nd) or X (64th), with `.` for dotted and `³` for triplets. Underneath, notes of an eighth or shorter get 1–4 beams (a flag when alone) grouped by beat. Triplets are marked **3**, with a bracket over quarter, half and whole triplets.
 - **BPM** is per project, 30–300 (default 90). Tap − or + for exactly 1 BPM. Hold it to repeat: after 0.4 s it steps every 250 ms, speeding up to every 36 ms by about 1.5 s, so 90 → 150 takes about 3.3 s. The whole hold is one undo step. **Time signature** is set in the menu: 4/4, 3/4, 2/4 or 6/8.
 - **Tunings:** C standard, Drop C, D standard, Drop D, E standard and Open G. Other tunings from imported files are kept as Custom (imported).
+
+## Chord library
+
+- In the step editor (tap a cell), tap **Chords**. Search by name (`Em`, `F#m`, `power`, `sus`) or filter with the **Open / Power / Barre / Other** chips.
+- Tap a chord to preview it: it's drawn on the neck and stacked in the bar's mini roll at the cursor step, and you hear it.
+- Choose **Strum ↓** (all notes on one step) or **Arp** (one note per grid step, low string first), then **Drop into measure**. Notes already on those strings at that step are replaced, muted (x) strings are left alone, and an arpeggio that runs past the end adds a bar. It's one undo step, and the toast has an **Undo** button.
+- **Chord boxes are drawn like the app's neck: high e on the left, low E on the right** (most chord books draw them the other way round). Names follow the armed track's tuning: in D standard the Em shape is labelled Dm (Em shape); on an uneven tuning like Drop D it's just "Em shape".
 
 ## Timeline and transport
 
@@ -59,30 +69,31 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 | ← → / ↑ ↓ | Move one step / move between strings |
 | Enter | Open the fret picker (type 0–22, x, or Backspace) |
 | [ / ] | Coarser / finer grid value |
-| . / T | Dotted / Triplet on or off |
+| . / T | Dotted / Triplet on or off (armed track) |
 | Ctrl/⌘+Z, Shift+Ctrl/⌘+Z or Ctrl+Y | Undo / redo |
-| Esc | Close the picker or menu |
+| Esc | Close the chord library, picker or menu |
 
 ## Saving and loading
 
 - **Auto-save:** work saves automatically in this browser, for this site address only. Clearing site data deletes it.
 - **☰ → Export project (.json)** saves the current project. **Export all** saves the whole library. Export is your real backup.
+- **☰ → Share project** hands the project to another app (as `<name>.json.txt`, which Android accepts; Import reads it back). If the browser can't share files it shares the tab as text, then copies it, then saves the file.
 - **☰ → Import (.json)** offers two choices:
   - **Merge** adds the file's projects and skips identical copies.
   - **Replace** swaps your whole library for the file, after a confirm.
 - **Moving between devices or addresses** (for example from maximini22.github.io/github-tab to jeremylegalrecords.com/guitar-tab): Export all on the old one, then Import with Merge on the new one.
-- Older files (schemaVersion 1–3) open fine.
+- Older files (schemaVersion 1–4) open fine: an older project's note style is given to every track. A file from a newer version is refused with a message to reload the app.
 - **☰ → Export MIDI (.mid):** see [MIDI export](#midi-export).
 
 ## Tests
 
-`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `midi.mjs` parse-tests the MIDI encoder in Node.
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel and the chord library, and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
 
 ```sh
-cd tests && npm install && node midi.mjs && CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
+cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs
 ```
 
-Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site.
+Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. To go back to v7, see [docs/ROLLBACK.md](docs/ROLLBACK.md).
 
 ## MIDI export
 
@@ -101,6 +112,7 @@ All of these are planned, with no promised dates:
 - **Hammer-on, pull-off, slide, bend and vibrato** in the editor (files already accept them)
 - **Let-ring / sustain**, plus palm-mute, harmonics and tapping
 - **Sliding-strip tuner mode**
+- **More chords** (more 7ths, add9 and voicings up the neck, custom shapes) and a chord-name row above the tab
 - **Koala export**
 
 ## Publishing (maintainers)

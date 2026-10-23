@@ -18,7 +18,7 @@ The editor is built to fit a phone screen with no page scrolling. It has been ch
 |---|---|
 | Header | JLR · Guitar Tab (links to the about page), the save status, and **☰** to open the menu |
 | Transport | **Back to start**, **Play/Pause**, **Stop**, **Loop**, and **BPM** with − and + (tap for ±1, hold to run) |
-| Toolbar | **Grid** (note value, 1/1 to 1/64), the **· | 3** note-style switch (Dotted, Triplet), **‹ ›** to move one grid step, the cursor position as `bar|beat|16th` (plus `+ticks` on fine grids, for example `1|2|3+40`), **Undo** and **Redo** |
+| Toolbar | **Grid** (note value, 1/1 to 1/64), the armed track's number and its **· | 3** note-style switch (Dotted, Triplet), **‹ ›** to move one grid step, the cursor position as `bar|beat|16th` (plus `+ticks` on fine grids, for example `1|2|3+40`), **Undo** and **Redo** |
 | Track strip | One row per track: colour, name, tuning, **M**, **S** and a volume slider. Tap the name to arm that track for editing. **+ Track (n/3)** appears while there's room. |
 | Ruler | Top lane: bar numbers and the loop brace. Bottom lane: beat counts (1 e & a 2 …, and `trip`/`let` on triplet grids). The green playhead line runs through the ruler and the grid. |
 | Tab grid | Six string lanes, high e at the top and low string at the bottom, the way you see them when you play. Underneath, the rhythm rows: `len` (note values), beams and flags, and triplet marks. See [The rhythm row](#the-rhythm-row). |
@@ -33,7 +33,7 @@ On first use, a three-line hint explains tapping, arming and looping. **Got it**
 - **Next step ›** and **‹ Back step** move one grid step with the picker still open, so you can pencil in a whole bar without closing it. **Done** closes the picker. See [The step editor](#the-step-editor).
 - **The edit cursor** is the teal outline. It shows where the next note goes. Arrows **‹ ›** move it one grid step. While stopped, the playhead follows the cursor, so Play starts where you're working.
 - **Note length** is automatic. A note lasts until the next note on the same track starts, capped at one bar. The `len` row shows the resulting value (W, H, Q, E, S, T, X, with `.` for dotted and `³` for triplets).
-- Each string can hold one note per moment on a track. Chords are simply notes on several strings in the same step.
+- Each string can hold one note per moment on a track. Chords are simply notes on several strings in the same step, or drop a whole shape from the [chord library](#chord-library).
 - Placing a note plays it once so you can hear it.
 
 ## The step editor
@@ -48,9 +48,27 @@ The fret picker doubles as a screen you can stay on and step through whole bars:
   - **Bar »** goes to the start of the next bar.
   - Next step and Bar » add a bar when you go past the end of the song (one undo step).
 - **Mini tab roll (top of the sheet):** the current bar on all six strings, laid out like the main grid. On fine grids (more than 16 steps in a bar, such as 1/32 and 1/64) it shows the 16-step page holding the cursor, and the caption says which steps are showing, for example `Bar 2 of 4 · step 21/64 · showing 17–32`. The armed track's frets show in full, and the other tracks show faint in their colours, so you can see what else is going on. The current step is the lit column, and your string's row is yellow. Tap any cell in the roll to jump there (step and string).
+- **Chords** (under x Muted / Clear) opens the [chord library](#chord-library) at this step.
 - **↶ / ↷** in the sheet's header are Undo and Redo, so you can fix a slip without closing it.
 - While stopped, the playhead follows every move, so Play starts where you're working.
 - The sheet always fits the screen without scrolling, checked at 390×844, 390×650 and 360×640. The fret rows shrink to fit, down to a 24px minimum so they stay easy to tap. On a tall screen (390×844) all 23 frets show at once. On a shorter one, or with the browser's bars showing, only the neck scrolls inside the sheet: swipe it to reach the top or bottom frets. When the step already has a note, the neck scrolls so that fret is in view.
+
+## Chord library
+
+Tap **Chords** in the step editor. The library opens over it, for the armed track and the cursor's bar and step (the header says which, for example `Guitar 1 · E std · Bar 2 · step 5/8`).
+
+- **22 shapes** in four groups: **Open** (C, G, D, Dm, Em, E, A, Am, E7, A7), **Power** (E5, A5, D5, G5), **Barre** (F, Bm, B, F#m) and **Other** (Bdim, Caug, Dsus4, Asus2). Search by name or quality (`Em`, `F#m`, `power`, `sus`, `minor`, `dim`), or tap a family chip.
+- **How to read a box:** it's drawn like the app's own neck and tab rows, **high e on the left, low E on the right**, nut at the top. Most chord books and websites draw boxes the other way round (low E on the left), so a shape looks mirrored next to a book. Rings above the nut are open strings, × is a string you don't play, numbers are fingers, and a bar across the strings is a barre. Under the name, the fret code reads in the same order, high e first (Em = `000220`); the detail view shows both orders (`e→E 000220 · E→e 022000`).
+- **Preview:** tap a chord. It's drawn on the neck, the shape chips list each string (high e first) with its fret and finger, the mini roll shows where its notes would land in the bar (in yellow), and you hear it. On a short screen the chord list hides while you look at one; **Cancel** or Esc goes back to it.
+- **Strum ↓** puts all its notes on the cursor step. **Arp** spreads them out, one note per grid step, lowest string first (so on a 1/8 grid an Em arpeggio takes 6 eighths). The choice is remembered.
+- **Drop into measure** writes the notes on the armed track:
+  - strings marked × are skipped, and any note already on them stays;
+  - a note already on one of the chord's strings at that step is replaced;
+  - an arpeggio that runs past the last bar adds bars;
+  - it's **one undo step**. The toast ("Em added at bar 2, step 5") has an **Undo** button, and the sheet's ↶ and Ctrl+Z work too.
+  - A note lasts until the track's next note, so arpeggio notes cut each other off (there's no let-ring yet).
+- **Names follow the tuning.** The shapes are standard-tuning fingerings. On a track in another tuning, the same fingering sounds different, so it's labelled honestly: if every string is shifted the same amount (C standard, D standard), the box shows the real name with the shape, for example **Dm (Em shape)** in D standard. If the strings move by different amounts (Drop D, Drop C, Open G), it's shown as **Em shape**, with a note that the tuning changes it unevenly.
+- The library is a small file, `app/chords.json`, cached for offline use with the rest of the app. In that file, `frets` and `fingers` run **low E first** (index 0 = string 6) and `null` is a string you don't play; `barre` is `{ fret, from, to }` in the same low-to-high positions (1–6). The app mirrors them on screen.
 
 ## Tracks (up to 3)
 
@@ -91,7 +109,8 @@ All audible tracks play **together, in sync**. Tracks that won't be heard are di
   - A whole hold is **one undo step**, and it saves once, when you let go.
 - **Time signature** is set per project, in the menu: 4/4, 3/4, 2/4 or 6/8. In 6/8 the beat is a dotted quarter.
 - **Grid** is the note value of one step, like a DAW's snap setting. The dropdown holds the plain values 1/1, 1/2, 1/4, 1/8, 1/16, 1/32 and 1/64 (default 1/8).
-- The **note style** switch next to it, **·** (Dotted) and **3** (Triplet), changes the step: Dotted is 1.5 × the value, and Triplet is 3 in the time of 2 (⅔ of the value). Only one can be on. Tapping one turns it on and the other off, and tapping the lit one goes back to plain. The style is part of the project's grid, so it's saved, exported and undoable.
+- The **note style** switch next to it, **·** (Dotted) and **3** (Triplet), changes the step: Dotted is 1.5 × the value, and Triplet is 3 in the time of 2 (⅔ of the value). Only one can be on. Tapping one turns it on and the other off, and tapping the lit one goes back to plain.
+- **The note style is per track** (since v8). The switch changes the **armed track** only, and the coloured number in front of it shows which track that is. A track with a style shows **·** or **3** by its name. So track 1 can play straight eighths while track 2 plays eighth triplets over it: each track's lanes, ruler counts and rhythm row follow its own style, and playback and MIDI put every note at its exact time. BPM, time signature and the grid value stay project-wide. Arming another track keeps the cursor at the same moment (on the nearest step of that track's grid). The style is saved, exported and undoable, and a new track starts with the armed track's style.
 
 | Grid | Note | Plain ticks | Dotted (·) | Triplet (3) |
 |---|---|---|---|---|
@@ -149,14 +168,19 @@ The pinned field at the bottom ("Idea notes…") is a short scratchpad of up to 
   - **+ Add bar** and **− Last bar** change the song length.
   - **Loop from this bar** and **Loop to this bar** set the loop ends.
   - **Clear this step (armed track)** clears notes on the armed track only.
-- **Files:** **Export project (.json)**, **Export MIDI (.mid)**, **Export all (.json)**, **Import (.json)**, and **Share project** where the browser can share files.
+- **Files:** **Export project (.json)**, **Export MIDI (.mid)**, **Export all (.json)**, **Import (.json)**, and **Share project**.
 - **Text tab:** a plain-text copy of the tab to paste anywhere, with **Copy**.
 
 ## Saving, export and import
 
 - Everything **saves automatically in this browser**, on this device and at this web address. Clearing the browser's site data deletes it, so **export is your real backup**.
 - **Moving from the old address?** Saved work doesn't carry over between web addresses (maximini22.github.io/github-tab and jeremylegalrecords.com/guitar-tab are separate to the browser). Export all at the old one, then Import at the new one.
-- **Export project (.json)** saves the current project as a `.json` file. **Export all (.json)** saves the whole library. On a phone the file goes to your Downloads, and from there you can keep it in your files or cloud drive or send it to yourself. **Share project** hands the file straight to another app where the browser supports it.
+- **Export project (.json)** saves the current project as a `.json` file. **Export all (.json)** saves the whole library. On a phone the file goes to your Downloads, and from there you can keep it in your files or cloud drive or send it to yourself. **Share project** hands the project straight to another app (Messages, Drive, email). It tries, in order:
+  1. **the file**, named `<project>.json.txt` as plain text. Android's share sheet only takes a short list of file types and refuses `.json`, so the file is sent as text. **Import** reads a `.json.txt` back as normal (rename it to `.json` if you like);
+  2. if files can't be shared, **the tab as text** (title and the text tab);
+  3. if that fails too, it **copies the tab** to the clipboard and says so;
+  4. as a last resort, it **saves the .json file** (like Export) and says so.
+  Closing the share sheet without choosing an app does nothing, with no error.
 - **Export MIDI (.mid)** opens a small sheet: **All tracks** (one file, one lane per track) or one row per track for a file with only that track. It's for opening your idea in a DAW or notation app. See [MIDI export](#midi-export). MIDI is export only, so keep the .json as your backup.
 - **Import (.json)** checks the file first, then asks how to bring it in:
   - **Merge** keeps everything you have and adds the file's projects. An identical copy of a project you already have is skipped, and a changed copy is added as "(imported)".
@@ -167,7 +191,8 @@ The pinned field at the bottom ("Idea notes…") is a short scratchpad of up to 
   - a 5:4 (or other non-triplet) tuplet grid becomes a plain value
   - tracks with mixed time signatures now share one
 - To move to another device, export on one, then import with Merge on the other.
-- Files from older versions (schemaVersion 1–3) open fine. A library saved by an older version in this browser is upgraded the first time v4 opens, and a one-off backup copy is kept under `jlr-guitar-tab:library-v3-backup` (or `-v2-`/`-v1-`).
+- Files from older versions (schemaVersion 1–4) open fine. In a v4 file (v7 and earlier) the note style belonged to the whole project, so every track gets that style. A file from a **newer** version is refused with "This file was made by a newer version of Guitar Tab … Reload the app to update it".
+- A library saved by an older version in this browser is upgraded the first time a new version opens, and a one-off backup copy is kept under `jlr-guitar-tab:library-v4-backup` (or `-v3-`, `-v2-`, `-v1-`). v8 saves under `jlr-guitar-tab:library-v5` and also keeps a v7-readable copy under the old key, so rolling back to v7 loses nothing but the per-track styles. See [ROLLBACK.md](ROLLBACK.md).
 - The app moved from `/github-tab/` to `/github-tab/app/`. Both are on the same web origin, so work saved by the old version is picked up automatically.
 
 ## Checking a round trip by hand
@@ -198,13 +223,22 @@ Use this when you want to be sure an export brings everything back:
 10. BPM hold: a tap is ±1; holding + runs 90 → 150 in under 5 s with gaps that only shrink; letting go or sliding off stops it at once; it clamps at 30 and 300; nothing saves during the hold and it saves once on release; one Undo reverts the whole hold; and the tempo changes live while playing.
 11. MIDI: opens the export sheet, downloads **All tracks** and a single track, and parses both files back (tracks, names, tempo, loop markers, every note's tick and pitch, channels, CC7, muted velocity).
 
-`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
+`tests/v8.mjs` covers v8 in the same headless Chrome:
+
+1. **Share:** with `navigator.share`, `canShare` and the clipboard mocked, every branch: the file share (a `.json.txt`, `text/plain`, holding the project), the text share, the clipboard copy, the download, cancel (AbortError) staying silent, and a shared `.json.txt` importing back.
+2. **Per-track feel:** the toggles change the armed track only, the toolbar track number and row badges, per-track steps and lanes, the cursor keeping its tick when arming, undo/redo of a style, playback timing of a straight track against a triplet track, the text tab, a mixed straight + triplet project round-tripping through Export/Import, the v7 copy and rollback pick-up, and the "newer version" message.
+3. **Chord library:** opening from the step editor, 22 boxes in 4 groups with chip counts, search, the high-e-left boxes, the detail view (both fret orders, preview roll, neck marks, shape chips), Strum drop (6 notes, replacing old ones), the toast's Undo, × strings skipped (D), Arp one step apart low string first, an Arp that adds a bar and its one-step undo, tuning-aware names (Dm (Em shape)), dropping onto the armed track, and Escape.
+4. **No scroll:** the page, step editor, chord grid and chord detail at 390×844, 390×650 and 360×640.
+
+`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. For v8 it also checks schema 5 (a mixed straight + triplet project's MIDI ticks, parse-back, the v7 copy, unknown styles, newer files) and the chord data: all 22 shapes give the right notes, root in the bass, × strings skipped, and the tuning-aware names. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
 ```sh
 cd tests
 npm install                                   # puppeteer-core + midi-file (tests only); uses your installed Chrome
-node midi.mjs                                 # MIDI encoder parse test (no browser)
+node midi.mjs                                 # MIDI encoder, model and chord data (no browser)
 CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
+CHROME_PATH=/usr/bin/google-chrome node v8.mjs
+npm test                                      # all three
 # against the live site instead of a local copy:
 BASE=https://jeremylegalrecords.com/guitar-tab/ node roundtrip.mjs
 ```
@@ -242,22 +276,22 @@ When a keyboard is attached:
 | ↑ ↓ | Move between strings |
 | Enter | Open the fret picker at the cursor |
 | [ / ] | Coarser / finer grid value (keeps the style) |
-| . | Dotted on/off |
-| T | Triplet on/off |
+| . | Dotted on/off (armed track) |
+| T | Triplet on/off (armed track) |
 | Ctrl/⌘+Z | Undo |
 | Shift+Ctrl/⌘+Z or Ctrl+Y | Redo |
-| Esc | Close the picker or menu |
+| Esc | Close the chord library (detail first), the picker or the menu |
 
 With the picker open, type a fret number (0–22; for two digits, type them quickly), **x** for muted, or Backspace/Delete to clear. ← → step back and forward, and ↑ ↓ change string, without closing it.
 
-## File format (schemaVersion 4)
+## File format (schemaVersion 5)
 
 Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI note numbers. That makes the format MIDI-ready. Notes sit at absolute ticks and don't depend on the grid.
 
 ```jsonc
 {
   "schema": "jlr-guitar-tab",
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "kind": "project",                 // or "library" for Export all
   "ppq": 480,
   "exportedAt": "2026-10-23T08:00:00.000Z",
@@ -266,7 +300,6 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
     "id": "…", "title": "Night drive riff",
     "bpm": 112,
     "grid": { "value": "eighth" },   // whole | half | quarter | eighth | sixteenth | thirtysecond | sixtyfourth
-                                      // + "dotted": true, or + "tuplet": { "actual": 3, "normal": 2 } (triplet)
     "timeSignature": [4, 4],
     "lengthTicks": 3840,              // whole bars
     "loop": { "enabled": true, "startMeasure": 1, "endMeasure": 2 },   // bars from 1, end included
@@ -275,6 +308,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
     "tracks": [{                      // 1 to 3 tracks
       "id": "…", "name": "Rhythm",
       "tuning": { "id": "drop-d", "name": "Drop D (D A D G B E)", "midi": [64, 59, 55, 50, 45, 38] },
+      "style": "plain",               // plain | dotted | triplet (this track's note style)
       "volume": 80, "mute": false, "solo": false,
       "notes": [
         { "string": 6, "fret": 0,    "startTick": 0,    "durationTicks": 240, "techniques": [] },
@@ -285,7 +319,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 }
 ```
 
-- **Grid:** `{ "value" }` alone is plain. Dotted adds `"dotted": true`, and Triplet adds `"tuplet": { "actual": 3, "normal": 2 }` (never both). 1/32, 1/64 and the styles were added in v7 as a superset, so the schemaVersion stays 4. An older v4–v6 app opens a dotted or triplet grid on a plain value and says so. It refuses a file whose grid is 1/32 or 1/64 ("unknown note length"), so reload an old tab to update it first.
+- **Grid and style:** the project's `grid` is just `{ "value" }`. Each track's `style` is `plain`, `dotted` (1.5 × the value) or `triplet` (3 in the time of 2), so a track's step is the project value with its own style. This is why the schemaVersion went from 4 to 5 in v8. In schemaVersion 4 files (v7) the style was on the project grid instead (`"dotted": true` or `"tuplet": { "actual": 3, "normal": 2 }`); importing one gives that style to every track. v7 and older refuse a schemaVersion 5 file ("made by a newer version").
 - **Strings:** `string` runs from 1 (high) to 6 (low). `tuning.midi` lists the open strings in that order. Each is a MIDI note from 0 to 105, so even fret 22 stays inside MIDI's 0–127 range. **Pitch = `tuning.midi[string − 1] + fret`.**
 - **Notes:** `fret` is 0–22 (0–16 before v6; older files are a subset, so the schemaVersion stays 4), and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.

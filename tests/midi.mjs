@@ -178,22 +178,24 @@ for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v, i) => 
   const base = (v, grid) => {
     if (v === 3) { const f = JSON.parse(JSON.stringify(V3)); f.projects[0].grid = grid; f.projects[0].tracks[0].notes[0].startTick = 160; return f; }
     const q = M.newProject('m'); q.grid = grid; q.tracks[0].notes = [{ string: 1, fret: 3, startTick: 160, durationTicks: 0, techniques: [] }];
-    return { schema: 'jlr-guitar-tab', schemaVersion: v, kind: 'project', ppq: 480, projects: [JSON.parse(JSON.stringify(q))] }; };
+    const pj = JSON.parse(JSON.stringify(q)); if (v < 5) pj.tracks.forEach((t) => { delete t.style; }); // v4 files have no per-track style
+    return { schema: 'jlr-guitar-tab', schemaVersion: v, kind: 'project', ppq: 480, projects: [pj] }; };
   const r1 = M.parseFile(base(3, { value: 'eighth', dotted: true, tuplet: null }));
-  eq([r1.projects[0].grid, r1.warnings.length], [{ value: 'eighth', dotted: true }, 0], 'v7 migration: v3 dotted 1/8 kept as 1/8 + Dotted, no warning');
+  const eff = (r) => M.trackGrid(r.projects[0], r.projects[0].tracks[0]);
+  eq([eff(r1), r1.projects[0].tracks[0].style, r1.warnings.length], [{ value: 'eighth', dotted: true }, 'dotted', 0], 'v8 migration: v3 dotted 1/8 kept as 1/8 + a Dotted track, no warning');
   const r2 = M.parseFile(base(3, { value: 'sixteenth', dotted: false, tuplet: { actual: 3, normal: 2 } }));
-  eq([r2.projects[0].grid, r2.warnings.length, r2.projects[0].tracks[0].notes[0].startTick], [{ value: 'sixteenth', tuplet: { actual: 3, normal: 2 } }, 0, 160], 'v7 migration: v3 1/16 triplet kept as 1/16 + Triplet, notes unmoved');
+  eq([eff(r2), r2.warnings.length, r2.projects[0].tracks[0].notes[0].startTick], [{ value: 'sixteenth', tuplet: { actual: 3, normal: 2 } }, 0, 160], 'v8 migration: v3 1/16 triplet kept as 1/16 + a Triplet track, notes unmoved');
   const r3 = M.parseFile(base(3, { value: 'quarter', tuplet: { actual: 5, normal: 4 } }));
-  ok(JSON.stringify(r3.projects[0].grid) === '{"value":"quarter"}' && r3.warnings.length === 1 && /5:4 tuplet is now 1\/4/.test(r3.warnings[0]), 'v7 migration: v3 5:4 tuplet -> plain 1/4 with a warning: ' + r3.warnings[0]);
+  ok(JSON.stringify(eff(r3)) === '{"value":"quarter"}' && r3.warnings.length === 1 && /5:4 tuplet is now 1\/4/.test(r3.warnings[0]), 'v7 migration: v3 5:4 tuplet -> plain 1/4 with a warning: ' + r3.warnings[0]);
   const r4 = M.parseFile(base(3, { value: 'eighth', dotted: true, tuplet: { actual: 3, normal: 2 } }));
-  ok(JSON.stringify(r4.projects[0].grid) === JSON.stringify({ value: 'eighth', tuplet: { actual: 3, normal: 2 } }) && r4.warnings.length === 1, 'v7 migration: dotted triplet keeps the triplet, with a warning');
+  ok(JSON.stringify(eff(r4)) === JSON.stringify({ value: 'eighth', tuplet: { actual: 3, normal: 2 } }) && r4.warnings.length === 1, 'v7 migration: dotted triplet keeps the triplet, with a warning');
   const r5 = M.parseFile(base(4, { value: 'sixteenth' }));
-  eq([r5.projects[0].grid, r5.warnings.length, r5.migratedFrom || null], [{ value: 'sixteenth' }, 0, null], 'v7: a v4-v6 file (plain grid) loads unchanged');
+  eq([r5.projects[0].grid, r5.projects[0].tracks[0].style, r5.warnings.length, r5.migratedFrom || null], [{ value: 'sixteenth' }, 'plain', 0, 4], 'v8: a v4 file (plain grid) loads as 1/16 with a plain track (migratedFrom 4)');
   for (const g of [M.makeGrid('sixtyfourth', 'dotted'), M.makeGrid('eighth', 'triplet'), M.makeGrid('thirtysecond', 'plain')]) {
     const r = M.parseFile(JSON.parse(JSON.stringify(base(4, g))));
-    eq([r.projects[0].grid, r.warnings.length], [g, 0], `v7: JSON round trip keeps grid ${M.gridLabel(g)}`);
+    eq([eff(r), r.warnings.length], [g, 0], `v8: a v4 file's grid ${M.gridLabel(g)} becomes the track's effective grid`);
   }
-  eq(M.SCHEMA_VERSION, 4, 'v7: schema stays v4 (new grids are a superset)');
+  eq(M.SCHEMA_VERSION, 5, 'v8: schema v5 (note style per track)');
 }
 { // note length gating and MIDI ticks with triplet / 64th notes
   const q = M.newProject('Triplets'); q.bpm = 120;
@@ -204,6 +206,65 @@ for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v, i) => 
   const r = parse(TabMidi.build(q, { mode: 'all' })), got = notesOf(r.tracks[1]).map((x) => [x.on, x.off - x.on]);
   eq(got, q.tracks[0].notes.map((x) => [x.startTick, x.durationTicks]), 'v7 MIDI: triplet / 64T / dotted-64th notes land on exact ticks with exact lengths');
   ok(r.header.ticksPerBeat === 480 && got.slice(0, 3).every((x, i) => x[0] === i * 160), 'v7 MIDI: 8th triplets at 0, 160, 320 (PPQ 480)');
+}
+
+// ---- v8: per-track note style (schema 5) ----
+{
+  const q = M.newProject('Mixed feel'); q.bpm = 120; q.grid = { value: 'eighth' };
+  const t2 = M.newTrack('Triplet guitar', 'e-standard'); t2.style = 'triplet'; q.tracks.push(t2);
+  const n = (s, f, t) => ({ string: s, fret: f, startTick: t, durationTicks: 0, techniques: [] });
+  q.tracks[0].notes = [0, 240, 480, 720].map((t, i) => n(1, i, t));         // straight 8ths
+  t2.notes = [0, 160, 320, 480, 640, 800].map((t, i) => n(2, i + 3, t));     // 8th triplets
+  M.recompute(q);
+  eq([M.trackGrid(q, q.tracks[0]), M.trackGrid(q, t2)], [{ value: 'eighth' }, { value: 'eighth', tuplet: { actual: 3, normal: 2 } }], 'v8: effective grid per track (1/8 and 1/8T from one project value)');
+  eq([M.cells(q, M.trackGrid(q, q.tracks[0])).length, M.cells(q, M.trackGrid(q, t2)).length], [16, 24], 'v8: two bars of 4/4 = 16 straight steps on track 1, 24 triplet steps on track 2');
+  const r = parse(TabMidi.build(q, { mode: 'all' }));
+  eq(notesOf(r.tracks[1]).map((x) => x.on), [0, 240, 480, 720], 'v8 MIDI: straight track at 0, 240, 480, 720');
+  eq(notesOf(r.tracks[2]).map((x) => x.on), [0, 160, 320, 480, 640, 800], 'v8 MIDI: triplet track at 0, 160, 320, 480, 640, 800');
+  eq(notesOf(r.tracks[2]).slice(0, 5).map((x) => x.off - x.on), [160, 160, 160, 160, 160], 'v8 MIDI: triplet notes 160 ticks long');
+  const file = JSON.parse(JSON.stringify({ schema: 'jlr-guitar-tab', schemaVersion: M.SCHEMA_VERSION, kind: 'project', ppq: 480, projects: [q] }));
+  const back = M.parseFile(file);
+  eq([back.projects[0].grid, back.projects[0].tracks.map((t) => t.style)], [{ value: 'eighth' }, ['plain', 'triplet']], 'v8: a mixed straight + triplet project parses back unchanged');
+  const lib = M.newLibrary(); lib.projects = [q]; lib.activeProjectId = q.id; q.activeTrackId = t2.id;
+  const v4 = M.toV4(lib);
+  ok(v4.schemaVersion === 4 && JSON.stringify(v4.projects[0].grid) === JSON.stringify({ value: 'eighth', tuplet: { actual: 3, normal: 2 } }) && v4.projects[0].tracks.every((t) => !('style' in t)) && q.tracks[1].style === 'triplet',
+    'v8: the v7 rollback copy (toV4) is schema 4, grid = armed track\'s effective grid, no track styles, original untouched');
+  const bad = JSON.parse(JSON.stringify(file)); bad.projects[0].tracks[1].style = 'swing';
+  ok(/unknown note style/.test(M.parseFile(bad).error || ''), 'v8: an unknown track style is rejected: ' + M.parseFile(bad).error);
+  const newer = JSON.parse(JSON.stringify(file)); newer.schemaVersion = 6; const rn = M.parseFile(newer);
+  ok(rn.newer && /newer version of Guitar Tab \(schemaVersion 6; this app reads up to 5\)\. Reload the app/.test(rn.error), 'v8: a newer file says so: ' + rn.error);
+}
+
+// ---- v8: chord library (chords.json + js/chords.js) ----
+{
+  const cctx = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(HERE, '../app/js/chords.js'), 'utf8'), cctx);
+  const T = cctx.window.TabChords, data = JSON.parse(fs.readFileSync(path.join(HERE, '../app/chords.json'), 'utf8')), list = data.chords;
+  const STD = M.tuningFromId('e-standard').midi;
+  eq([list.length, new Set(list.map((c) => c.id)).size, data.stringOrder], [22, 22, 'low-to-high'], 'v8 chords: 22 shapes, unique ids, frets listed low E -> high e');
+  eq(list.reduce((o, c) => { o[c.family] = (o[c.family] || 0) + 1; return o; }, {}), { open: 10, power: 4, barre: 4, other: 4 }, 'v8 chords: families 10 open, 4 power, 4 barre, 4 other');
+  for (const c of list) {
+    const root = T.parseName(c.name).pc, pcs = [...new Set(T.pitches(c, STD).map((m) => ((m - root) % 12 + 12) % 12))].sort((a, b) => a - b);
+    const want = [...T.QUALITY_PCS[c.quality]].sort((a, b) => a - b), lowest = ((Math.min(...T.pitches(c, STD)) % 12) + 12) % 12;
+    ok(JSON.stringify(pcs) === JSON.stringify(want) && c.frets.length === 6 && c.fingers.length === 6 && lowest === root,
+      `v8 chord ${c.name} (${c.frets.map((f) => f ?? 'x').join('')}): pitch classes {${pcs}} = ${c.quality} {${want}}, ${T.NAMES[root]} in the bass`);
+  }
+  const em = list.find((c) => c.id === 'Em'), dm = list.find((c) => c.id === 'Dm'), A = list.find((c) => c.id === 'A'), F = list.find((c) => c.id === 'F');
+  eq(JSON.parse(JSON.stringify(T.notes(em))), [{ string: 6, fret: 0 }, { string: 5, fret: 2 }, { string: 4, fret: 2 }, { string: 3, fret: 0 }, { string: 2, fret: 0 }, { string: 1, fret: 0 }], 'v8 chords: Em notes = app strings 6..1 (frets[i] -> string 6 - i)');
+  eq(T.notes(dm).map((x) => x.string), [4, 3, 2, 1], 'v8 chords: x strings are skipped (Dm xx0231 -> strings 4..1)');
+  eq([T.code(em), T.code(em, true), T.code(dm, true)], ['022000', '000220', '1320xx'], 'v8 chords: fret codes in chart order (E->e) and box order (e->E)');
+  eq([T.label(em, STD).text, T.label(em, M.tuningFromId('d-standard').midi).text, T.label(em, M.tuningFromId('c-standard').midi).text, T.label(dm, M.tuningFromId('d-standard').midi).text],
+    ['Em', 'Dm (Em shape)', 'Cm (Em shape)', 'Cm (Dm shape)'], 'v8 chords: names follow the tuning (D std Em shape = Dm, C std = Cm)');
+  eq([T.label(em, M.tuningFromId('drop-d').midi).text, T.label(A, M.tuningFromId('drop-d').midi).text, T.label(em, M.tuningFromId('open-g').midi).text],
+    ['Em shape', 'A', 'Em shape'], 'v8 chords: uneven tunings are labelled honestly ("Em shape" in Drop D / Open G; A is still A in Drop D, low E unused)');
+  ok(T.label(F, M.tuningFromId('drop-c').midi).shift === null && /unevenly/.test(T.label(F, M.tuningFromId('drop-c').midi).note), 'v8 chords: F shape in Drop C has an "unevenly" note');
+  // box: high e on the LEFT. Em: the two finger dots (A and D strings = frets[1], frets[2]) sit in columns 3 and 4 of 0..5 (right half).
+  const svg = T.box(em), xs = [...svg.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="6"/g)].map((m) => Number(m[1])).sort((a, b) => a - b);
+  const sx = (80 - 15 - 5) / 5;
+  eq(xs.map((x) => Math.round((x - 15) / sx)), [3, 4], 'v8 chords: box draws high e on the left (Em finger dots in columns 3-4 of 0-5, i.e. A and D near the right)');
+  const fsvg = T.box(F), bar = /<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g; const rects = [...fsvg.matchAll(bar)].map((m) => [Number(m[1]), Number(m[2])]);
+  ok(rects.some(([x, w]) => Math.abs(x - (15 - 6)) < 0.01 && Math.abs(w - (5 * sx + 12)) < 0.01), 'v8 chords: F barre spans all six columns');
+  eq(T.search(list, 'power', STD).length, 4, 'v8 chords: search "power" finds 4');
+  ok(T.search(list, 'dm', M.tuningFromId('d-standard').midi).some((c) => c.id === 'Em'), 'v8 chords: search uses the tuning\'s names (Dm in D standard finds the Em shape)');
 }
 
 if (process.env.SAMPLE_DIR) {
