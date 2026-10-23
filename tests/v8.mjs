@@ -230,7 +230,7 @@ try {
     heads: [...document.querySelectorAll('#chords .cgh .sec-lab')].map((e) => e.textContent), sub: document.getElementById('chords-sub').textContent, foot: document.getElementById('chords-foot').textContent }));
   check('chords: library opens from the step editor with 30 chord boxes in 4 groups', g.cards === 30 && g.heads.join() === 'Open chords,Power chords,Barre chords,Other', JSON.stringify(g.heads));
   check('chords: family chips with counts (All 30, Open 10, Power 12, Barre 4, Other 4)', g.chips.join('|') === 'All 30|Open 10|Power 12|Barre 4|Other 4', g.chips.join('|'));
-  check('chords: header says track, tuning, bar and step; foot says boxes and codes read low E → high e and shapes slide with ‹ fret ›', /Guitar 1 · E std · Bar 1 · step 5\/8/.test(g.sub) && /low E → high e/.test(g.foot) && /‹ fret ›/.test(g.foot), g.sub + ' / ' + g.foot);
+  check('chords: header says track, tuning, bar and step; foot says shapes slide with ‹ fret › (no orientation caveat)', /Guitar 1 · E std · Bar 1 · step 5\/8/.test(g.sub) && !/high e|low E/.test(g.foot) && /‹ fret ›/.test(g.foot), g.sub + ' / ' + g.foot);
   await page.type('#chords-q', 'power');
   const pw = await page.$$eval('#chords .ccard', (a) => a.map((c) => c.dataset.id));
   check('chords: search "power" shows the 12 power chords, one per root (E5 first)', pw.join() === 'P-E,P-F,P-F#,P-G,P-G#,P-A,P-A#,P-B,P-C,P-C#,P-D,P-D#', pw.join());
@@ -249,11 +249,15 @@ try {
     pvCols: [...new Set([...document.querySelectorAll('#cd-roll .rc.pv')].map((e) => e.parentNode && [...e.parentNode.children].indexOf(e) % 9))],
     marks: [...document.querySelectorAll('#cd-neck .mk')].map((m) => (m.classList.contains('o') ? 'o' : m.classList.contains('x') ? 'x' : '') + ':' + m.textContent + '@' + [...m.classList].find((k) => /^k\d$/.test(k))),
     chips: [...document.querySelectorAll('#cd-chips .chip')].map((c) => c.textContent), str: document.getElementById('cd-str').textContent, cap: document.getElementById('cd-cap').textContent }));
-  check('chords detail: Em, code 022000 labelled "low E → high e"', d.name === 'Em' && /022000/.test(d.info) && /low E → high e/.test(d.info) && !/000220/.test(d.info), d.info);
+  check('chords detail: Em, code 022000 (no orientation caveat)', d.name === 'Em' && /022000/.test(d.info) && !/high e|low E/.test(d.info) && !/000220/.test(d.info), d.info);
   check('chords detail: preview roll shows the six notes stacked at the cursor step (high e 0 … low E 0)', d.pv.join('') === '000220' && /Strum · 6 notes/.test(d.cap), JSON.stringify(d));
-  check('chords detail: neck marks open strings (rings) and fingers 2 + 3 on the A/D columns (right side)', d.marks.filter((m) => m.startsWith('o')).length === 4 && d.marks.includes(':2@k4') && d.marks.includes(':3@k3'), JSON.stringify(d.marks));
-  const cap2 = await page.$eval('.cneck-cap', (e) => e.textContent);
-  check('chords detail: string chips run low E first (like the chart); the neck stays the app neck (high e left) and says so', d.str.replace(/\s/g, '') === 'freteBGDAE' && /high e on the left/.test(cap2) && d.chips[0].startsWith('E') && d.chips[5].startsWith('e') && /fret 2 · finger 2/.test(d.chips[1]), d.str + ' ' + cap2 + ' ' + JSON.stringify(d.chips));
+  check('chords detail (v8.2): neck marks open E, G, B, e (rings) and plain dots on the A/D columns (k1, k2: left side, no finger numbers)', d.marks.filter((m) => m.startsWith('o')).join() === 'o:@k0,o:@k3,o:@k4,o:@k5' && d.marks.includes(':@k1') && d.marks.includes(':@k2') && d.marks.length === 6, JSON.stringify(d.marks));
+  const emDotX = await page.evaluate(() => { const nk = document.getElementById('cd-neck').getBoundingClientRect(), b = document.querySelector('#cd-neck .frow .board').getBoundingClientRect(); return [...document.querySelectorAll('#cd-neck .mk:not(.o):not(.x):not(.barre)')].map((m) => { const r = m.getBoundingClientRect(); return Math.floor(((r.left + r.width / 2) - b.left) / (b.width / 6)); }); });
+  check('chords detail (v8.2): Em\'s two dots are drawn in neck columns 1 and 2 (A and D)', emDotX.sort().join() === '1,2', JSON.stringify(emDotX));
+  check('chords detail (v8.2): neck columns read E A D G B e (low E on the left, like the boxes); no caption needed', d.str.replace(/\s/g, '') === 'fretEADGBe' && !(await page.$('.cneck-cap')), d.str);
+  check('chords detail (v8.2): string chips run low E first and show frets only ("fret 2", "open"; no finger numbers)', d.chips[0] === 'Eopen' && d.chips[1] === 'Afret 2' && d.chips[2] === 'Dfret 2' && d.chips[5] === 'eopen' && !d.chips.some((x) => /finger/.test(x)), JSON.stringify(d.chips));
+  const fingerText = await page.evaluate(() => ({ boxes: [...document.querySelectorAll('#chords .ccard svg text:not(.bs)')].map((t) => t.textContent).filter((t) => !/^\d+$/.test(t) || false), boxTexts: [...document.querySelectorAll('#chords .ccard[data-id="Em"] svg text:not(.bs)')].length, neck: [...document.querySelectorAll('#cd-neck .mk:not(.x)')].map((m) => m.textContent).join(''), side: document.querySelector('.cside .sec-lab').textContent }));
+  check('chords (v8.2): no finger numbers rendered (Em box has only string labels; neck dots empty); "Strings" header without caveat', fingerText.boxTexts === 0 && fingerText.neck === '' && fingerText.side.trim() === 'Strings', JSON.stringify(fingerText));
   check('chords detail: open shapes have no fret stepper', await page.$eval('#cd-move', (e) => e.hidden));
   await fitAll('detail');
   // drop (strum): 6 notes at the cursor step on the armed track, replacing high e 7 and low E 9, one undo step
@@ -321,6 +325,12 @@ try {
   await fresh();
   const chs = () => gt('window.__guitarTab.chords()');
   const atTick = async (t, tr = 0) => (await proj()).tracks[tr].notes.filter((n) => n.startTick === t).map((n) => n.string + ':' + n.fret).sort().join(' ');
+  // the fret picker is unchanged: its neck rows are whole-fret buttons (no per-string columns), string list high e at the top
+  await openCell(0, 4); await click('.frow[data-fret="3"]'); await sleep(150);
+  const pk = await page.evaluate(() => ({ list: [...document.querySelectorAll('#picker-strings .chip b')].map((b) => b.textContent).join(''), on: document.querySelector('#picker-strings .chip.on b').textContent, cols: document.querySelectorAll('#picker .neck .mk, #picker .neck [data-str]').length, lit: document.querySelector('#picker .frow.on').dataset.fret }));
+  check('picker (v8.2): string list still runs e B G D A E (high e at the top), the neck is fret rows only, A string fret 3 lit', pk.list === 'eBGDAE' && pk.on === 'A' && pk.cols === 0 && pk.lit === '3', JSON.stringify(pk));
+  await shot('v82-picker.png');
+  await click('#picker-undo'); await click('#picker-done');
   await openCell(0, 0); await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard');
   await click('#chords-fam .chip[data-fam="power"]'); await sleep(100);
   await shot('v81-power-grid.png');
@@ -348,7 +358,12 @@ try {
   await click('#chords .ccard[data-id="P-A"]'); await sleep(100);
   const ui = await page.evaluate(() => ({ mv: !document.getElementById('cd-move').hidden, fret: document.getElementById('cd-fret').textContent, info: document.getElementById('cd-info').textContent, s6: document.getElementById('cd-s6').getAttribute('aria-pressed'), n3: document.getElementById('cd-n3').getAttribute('aria-pressed'), name: document.getElementById('cd-name').textContent }));
   check('power stepper: A5 detail shows 577, "fret 5", 6th string and 3 notes selected', ui.mv && ui.name === 'A5' && /577/.test(ui.info) && ui.fret === 'fret 5' && ui.s6 === 'true' && ui.n3 === 'true', JSON.stringify(ui));
-  await shot('v81-power-stepper.png');
+  await shot('v82-chord-neck.png');
+  const a5n = await page.evaluate(() => ({ str: document.getElementById('cd-str').textContent, mk: [...document.querySelectorAll('#cd-neck .frow')].flatMap((r) => [...r.querySelectorAll('.mk:not(.o):not(.x):not(.barre)')].map((m) => r.querySelector('.n').textContent + '@' + [...m.classList].find((k) => /^k\d$/.test(k)) + ':' + m.textContent)),
+    x: [...document.querySelectorAll('#cd-neck .mk.x')].map((m) => [...m.classList].find((k) => /^k\d$/.test(k))).join(),
+    card: [...document.querySelectorAll('#chords .ccard[data-id="P-A"] svg text:not(.bs)')].map((t) => t.textContent), chips: [...document.querySelectorAll('#cd-chips .chip')].map((c) => c.textContent) }));
+  check('power neck (v8.2): A5 577 sits on the 3 leftmost columns (E fret 5, A and D fret 7), × over G B e, plain dots', a5n.mk.join() === '5@k0:,7@k1:,7@k2:' && a5n.x === 'k3,k4,k5' && a5n.str.replace(/\s/g, '') === 'fretEADGBe', JSON.stringify(a5n));
+  check('power box (v8.2): A5 box keeps its base-fret "5" and has no finger numbers; chips say fret 5 / fret 7 / muted', a5n.card.join() === '5' && a5n.chips.slice(0, 4).join() === 'Efret 5,Afret 7,Dfret 7,Gmuted', JSON.stringify(a5n));
   await click('#cd-up'); await click('#cd-up'); c = await chs();
   check('power stepper: › twice from A5 = B5 799, the B5 card is highlighted', c.cur.name === 'B5' && c.cur.code === '799' && c.sel === 'P-B' && (await page.$eval('#cd-fret', (e) => e.textContent)) === 'fret 7', JSON.stringify(c));
   for (let i = 0; i < 3; i++) await click('#cd-up');
@@ -398,6 +413,8 @@ try {
   check('drop D: power cards follow the real strings (E5 = 222, box strings D A D G B e)', dd.n === 'E5' && dd.f === '222' && dd.labs === 'DADGBe', JSON.stringify(dd));
   await click('#chords .ccard[data-id="P-E"]'); c = await chs();
   check('drop D: E5 is a one-finger barre (fingers 1-1-1, barre at fret 2)', c.cur.fingers.slice(0, 3).join('') === '111' && c.cur.barre && c.cur.barre.fret === 2, JSON.stringify(c.cur));
+  const ddn = await page.evaluate(() => { const b = document.querySelector('#cd-neck .mk.barre'), bd = b.parentNode.getBoundingClientRect(), r = b.getBoundingClientRect(); return { str: document.getElementById('cd-str').textContent, chips: [...document.querySelectorAll('#cd-chips .chip b')].map((x) => x.textContent).join(''), from: Math.round((r.left - bd.left) / (bd.width / 6) - 0.5), to: Math.round((r.right - bd.left) / (bd.width / 6) - 0.5) }; });
+  check('drop D neck (v8.2): columns D A D G B e, chips D A D G B e, the barre bar spans the 3 leftmost columns', ddn.str.replace(/\s/g, '') === 'fretDADGBe' && ddn.chips === 'DADGBe' && ddn.from === 0 && ddn.to === 2, JSON.stringify(ddn));
   await click('#cd-up'); await click('#cd-up'); await click('#cd-up'); c = await chs();
   check('drop D stepper: fret 5 = G5 555', c.cur.name === 'G5' && c.cur.code === '555', c.cur.code);
   await click('#cd-drop');
@@ -429,6 +446,93 @@ try {
     check(`fit ${w}x${h}: power detail with the 6th/5th + ‹ fret › + 1·5·8 row fits, nothing clipped`, pd.sh <= pd.ch + 1 && pd.page <= 0 && pd.pageX <= 0 && pdx.dropIn && !pdx.bad.length && pdx.row <= 44, JSON.stringify({ pd, pdx }));
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await click('#picker-done');
   }
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+
+  // ---------- 5. v8.2 metronome click ----------
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await fresh();
+  const mt = () => page.$eval('#click-toggle', (b) => ({ label: b.getAttribute('aria-label'), pressed: b.getAttribute('aria-pressed'), on: b.classList.contains('on'), inTransport: !!b.closest('.transport'), svg: !!b.querySelector('svg') }));
+  let m0 = await mt(), p0 = await proj();
+  check('metronome: toggle sits in the transport, metronome icon, aria-label "Metronome", off by default (project.metronome false)', m0.label === 'Metronome' && m0.inTransport && m0.svg && m0.pressed === 'false' && !m0.on && p0.metronome === false, JSON.stringify({ m0, met: p0.metronome }));
+  const volCtl = await page.evaluate(() => document.querySelectorAll('.transport input, .toolbar input[type=range], [id*="click-vol"], [id*="metro"], [aria-label*="metronome volume" i], [aria-label*="click volume" i]').length);
+  check('metronome: on/off only, no volume control anywhere (only the BPM field in the transport)', volCtl === 1, String(volCtl));
+  await place(0, 0, 3);
+  await click('#click-toggle'); m0 = await mt(); p0 = await proj();
+  check('metronome: toggle on -> aria-pressed true, saved on the project', m0.pressed === 'true' && m0.on && p0.metronome === true, JSON.stringify(m0));
+  await select('#bpm', '240');
+  if (!(await proj()).loop.enabled) await click('#loop-toggle');
+  const lp0 = (await proj()).loop;
+  const playFor = async (ms) => { await click('#play-btn'); await sleep(ms); };
+  const stopNow = async () => { if (await page.evaluate(() => window.TabAudio.isPlaying())) await click('#stop-btn'); };
+  const near = (a, b, e = 0.003) => Math.abs(a - b) <= e;
+  await playFor(3300); await stopNow();
+  let ck = await page.evaluate(() => window.TabAudio.clicks()), nl = await page.evaluate(() => window.TabAudio.scheduled());
+  const lv = await page.evaluate(() => window.TabAudio.clickLevel());
+  let ci = ck.filter((k) => k.countIn), mn = ck.filter((k) => !k.countIn);
+  check('metronome: Play from stopped gives a 1-bar count-in (4 clicks in 4/4, accent on 1, one beat apart before the downbeat)', ci.length === 4 && ci.map((k) => (k.accent ? 1 : 0)).join('') === '1000' && ci.every((k, i) => near(k.at, -1 + i * 0.25)), JSON.stringify(ci));
+  check('metronome 4/4 @240: every click lands on a beat tick (multiple of 480), one beat (0.25 s) apart', mn.length >= 8 && mn.every((k) => k.tick % 480 === 0) && mn.every((k, i) => near(k.at, i * 0.25)), JSON.stringify(mn.slice(0, 10)));
+  check('metronome 4/4: accent exactly on beat 1 of each bar (loop bar ' + lp0.startMeasure + ')', mn.every((k) => k.accent === (k.tick % 1920 === 0)) && mn.filter((k) => k.accent).length >= 2 && mn.slice(0, 8).map((k) => k.tick).join() === '0,480,960,1440,0,480,960,1440', mn.slice(0, 8).map((k) => k.tick + (k.accent ? '*' : '')).join());
+  const n0 = nl.filter((n) => !n.click);
+  check('metronome: in sync with the notes through the loop (note at 0 s and 1 s = accented clicks)', n0.length >= 2 && n0.slice(0, 2).every((n) => mn.some((k) => k.accent && near(k.at, n.at, 0.0005))), JSON.stringify(n0.slice(0, 2).map((n) => n.at)));
+  const dv = (await proj()).tracks[0].volume, defGain = lv.notePeak * dv / 100;
+  check('metronome level: fixed at 0.5x a fresh track\'s default-volume gain (' + dv + '% -> ' + defGain + '; click ' + lv.level + ')', dv === 80 && near(lv.level, 0.5 * defGain, 1e-9) && near(lv.defaultTrackGain, defGain, 1e-9) && n0[0].gain === 0.8, JSON.stringify({ lv, dv, ng: n0[0].gain }));
+  check('metronome: beat 1 at the fixed level, other beats softer', mn.filter((k) => k.accent).every((k) => near(k.gain, lv.level, 1e-4)) && mn.filter((k) => !k.accent).every((k) => k.gain < lv.level && near(k.gain, lv.level * lv.soft, 1e-4)), JSON.stringify(mn.slice(0, 4).map((k) => k.gain)));
+  await page.$eval('.trk:nth-child(1) input.vol', (v) => { v.value = '25'; v.dispatchEvent(new Event('input', { bubbles: true })); v.dispatchEvent(new Event('change', { bubbles: true })); });
+  await click('#play-start'); await playFor(1800); await stopNow();
+  ck = (await page.evaluate(() => window.TabAudio.clicks())).filter((k) => !k.countIn); nl = (await page.evaluate(() => window.TabAudio.scheduled())).filter((n) => !n.click);
+  check('metronome level ignores the track volume slider (track at 25%: notes 0.25, clicks unchanged)', (await proj()).tracks[0].volume === 25 && nl[0] && nl[0].gain === 0.25 && ck.length && ck.filter((k) => k.accent).every((k) => near(k.gain, lv.level, 1e-4)), JSON.stringify({ ng: nl[0] && nl[0].gain, cg: ck.slice(0, 2) }));
+  // From Start while playing: restarts on beat 1, no count-in
+  await playFor(1500); await click('#play-start'); await sleep(700);
+  ck = await page.evaluate(() => window.TabAudio.clicks());
+  check('metronome: From Start while playing restarts the click on beat 1 (accent at 0 s, no count-in)', ck.length >= 2 && !ck.some((k) => k.countIn) && ck[0].tick === 0 && ck[0].accent && near(ck[0].at, 0), JSON.stringify(ck.slice(0, 3)));
+  // BPM change mid-play (what hold-to-accelerate does): clicks stay on beat ticks and pick up the new tempo
+  await page.$eval('#bpm', (b) => { b.value = '300'; b.dispatchEvent(new Event('change', { bubbles: true })); });
+  await sleep(900); await stopNow();
+  ck = await page.evaluate(() => window.TabAudio.clicks());
+  const iv = ck.slice(1).map((k, i) => +(k.at - ck[i].at).toFixed(4));
+  check('metronome: BPM 240 -> 300 mid-play stays on beat ticks; spacing goes 0.25 s -> 0.2 s', ck.every((k) => k.tick % 480 === 0) && near(iv[0], 0.25) && near(iv[iv.length - 1], 0.2) && iv.every((x) => x > 0.19 && x < 0.26), iv.join());
+  // 3/4
+  await openDrawer(); await select('#timesig', '3/4'); await closeDrawer(); await select('#bpm', '240');
+  await playFor(2600); await stopNow();
+  ck = await page.evaluate(() => window.TabAudio.clicks()); ci = ck.filter((k) => k.countIn); mn = ck.filter((k) => !k.countIn);
+  check('metronome 3/4: 3-click count-in, then clicks on beat ticks with the accent every 3rd beat (bar = 1440 ticks)', ci.length === 3 && ci.map((k) => (k.accent ? 1 : 0)).join('') === '100' && mn.length >= 6 && mn.every((k) => k.tick % 480 === 0 && k.accent === (k.tick % 1440 === 0)) && mn.slice(0, 6).map((k) => k.accent ? 1 : 0).join('') === '100100', mn.slice(0, 7).map((k) => k.tick + (k.accent ? '*' : '')).join());
+  await openDrawer(); await select('#timesig', '6/8'); await closeDrawer(); await click('#play-start');
+  await playFor(2600); await stopNow();
+  ck = await page.evaluate(() => window.TabAudio.clicks()); ci = ck.filter((k) => k.countIn); mn = ck.filter((k) => !k.countIn);
+  check('metronome 6/8: clicks on the dotted-quarter beat (720 ticks, like the ruler), 2-click count-in, accent every bar', ci.length === 2 && mn.length >= 4 && mn.every((k) => k.tick % 720 === 0 && k.accent === (k.tick % 1440 === 0)) && mn[0].tick === 0 && mn.slice(0, 4).map((k) => k.accent ? 1 : 0).join('') === '1010', mn.slice(0, 5).map((k) => k.tick + (k.accent ? '*' : '')).join());
+  // off: no clicks
+  await click('#click-toggle'); await playFor(800); await stopNow();
+  check('metronome off: no clicks scheduled, no count-in', (await page.evaluate(() => window.TabAudio.clicks())).length === 0);
+  // MIDI export ignores it
+  const midiSame = await page.evaluate(() => { const p = JSON.parse(JSON.stringify((typeof window.__guitarTab.library === 'function' ? window.__guitarTab.library() : window.__guitarTab.library).projects[0])); p.metronome = false; const a = Array.from(window.TabMidi.build(p, { mode: 'all' })); p.metronome = true; const b = Array.from(window.TabMidi.build(p, { mode: 'all' })); return a.length > 0 && a.join() === b.join(); });
+  check('metronome is not in the MIDI export (same bytes with it on or off)', midiSame);
+  // JSON round trip
+  await click('#click-toggle');
+  for (const x of fs.readdirSync(DL)) fs.unlinkSync(path.join(DL, x));
+  await openDrawer(); await click('#export-one'); const mx = await waitDownload([], '.json'); await closeDrawer();
+  const mj = JSON.parse(fs.readFileSync(mx, 'utf8'));
+  check('metronome JSON: export carries "metronome": true (schema still 5)', mj.schemaVersion === 5 && mj.projects[0].metronome === true, JSON.stringify({ v: mj.schemaVersion, m: mj.projects[0].metronome }));
+  await page.evaluate(() => localStorage.clear()); await page.reload({ waitUntil: 'networkidle0' });
+  if (!(await page.$eval('#hint', (h) => h.hidden))) await click('#hint-ok');
+  await importPath(mx, 'replace'); await closeDrawer();
+  m0 = await mt();
+  check('metronome JSON round trip: imports back on (toggle lit, project.metronome true)', (await proj()).metronome === true && m0.pressed === 'true', JSON.stringify(m0));
+  delete mj.projects[0].metronome; const oldf = path.join(DL, 'pre-v82.json'); fs.writeFileSync(oldf, JSON.stringify(mj));
+  await importPath(oldf, 'replace'); await closeDrawer();
+  check('metronome JSON: an older file without the field imports with the click off', (await proj()).metronome === false && (await mt()).pressed === 'false');
+  const mv4 = await page.evaluate(() => { const k = Object.keys(localStorage).find((x) => /:library$/.test(x)); return k ? JSON.parse(localStorage.getItem(k)) : null; });
+  check('metronome: the v7 rollback copy leaves the field out', !mv4 || mv4.projects.every((p) => !('metronome' in p)), mv4 ? 'v4 copy present' : 'no v4 copy key');
+  // fits with the extra transport button
+  await click('#click-toggle');
+  for (const [w, h] of [[390, 844], [390, 650], [360, 640]]) {
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); await sleep(200);
+    const tf = await page.evaluate(() => { const t = document.querySelector('.transport'), b = document.getElementById('click-toggle').getBoundingClientRect(), bpm = document.getElementById('bpm-up').getBoundingClientRect();
+      return { sw: t.scrollWidth, cw: t.clientWidth, py: document.scrollingElement.scrollHeight - innerHeight, px: document.scrollingElement.scrollWidth - innerWidth, b: [Math.round(b.left), Math.round(b.right), Math.round(b.height)], bpmR: Math.round(bpm.right) }; });
+    check(`fit ${w}x${h}: transport with the Metronome toggle fits, no page scroll`, tf.sw <= tf.cw && tf.py <= 0 && tf.px <= 0 && tf.bpmR <= w && tf.b[2] >= 40, JSON.stringify(tf));
+  }
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await openDrawer(); await select('#timesig', '4/4'); await closeDrawer(); await click('#play-start');
+  await select('#bpm', '120'); await click('#play-btn'); await sleep(2700); await shot('v82-click.png'); await stopNow();
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
 
   check('no page errors', errors.length === 0, errors.join('\n'));

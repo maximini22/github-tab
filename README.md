@@ -11,7 +11,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - Up to **3 tracks** on one grid. The armed track is drawn in full and the others show faint and colour-coded.
 - **Layered playback** with mute, solo and volume per track.
 - **Six tunings** per track, and frets 0–22.
-- A DAW-style transport, a bar|beat ruler, a loop brace, and 100 undo steps.
+- A DAW-style transport with a metronome click, a bar|beat ruler, a loop brace, and 100 undo steps.
 - Fits a phone screen with no page scroll. Only the tab grid scrolls sideways.
 - Auto-save, plus Export and Import as `.json`.
 - **MIDI export (.mid):** all tracks in one Type 1 file (one lane per track), or one track on its own.
@@ -48,7 +48,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - In the step editor (tap a cell), tap **Chords**. Search by name (`Em`, `F#5`, `A5`, `power`, `sus`), by fret code (`244`, `577`, `x355`), or filter with the **Open / Power / Barre / Other** chips.
 - Tap a chord to preview it: it's drawn on the neck and stacked in the bar's mini roll at the cursor step, and you hear it.
 - Choose **Strum ↓** (all notes on one step) or **Arp** (one note per grid step, low string first), then **Drop into measure**. Notes already on those strings at that step are replaced, muted (x) strings are left alone, and an arpeggio that runs past the end adds a bar. It's one undo step, and the toast has an **Undo** button.
-- **Boxes and fret codes read like a chord chart: low E on the left, low → high** (Em = `022000`, A = `x02220`, F#5 = `244`), with the strings labelled under each box. The big neck in the detail view is the app's own neck (high e on the left) and is captioned so.
+- **Boxes and fret codes read like a chord chart: low E on the left, low → high** (Em = `022000`, A = `x02220`, F#5 = `244`), with the strings labelled under each box. Since v8.2 the big neck in the detail view reads the same way (E A D G B e left to right, or the tuning's letters, e.g. D A D G B e), and no finger numbers are drawn anywhere: dots are plain, with barre bars, × / o and the starting fret kept.
 - **Power chords are movable:** 12 cards, one per root (6th-string shape up to fret 7: E5 `022` … F#5 `244` … A5 `577` … B5 `799`; then the 5th-string shape: C5 `x355` … D#5 `x688`). In the detail view, **6th / 5th** picks the root string, **‹ fret ›** slides the shape (the name follows the root; top fret 22), and **1·5·8 / 1·5** picks 3 notes or 2. In Drop D / Drop C the 6th-string shape is the one-finger barre (E5 = `222`).
 - **Barre chords are movable too:** F, Bm, B and F#m have the same ‹ fret › stepper and an **E shape / A shape** toggle (F → fret 3 = G `355433`).
 - Names of the open shapes follow the armed track's tuning: in D standard the Em shape is labelled Dm (Em shape); on an uneven tuning like Drop D it's just "Em shape". Movable shapes are always named from their real root.
@@ -62,6 +62,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - **Back to start** jumps to the loop start, or to bar 1 when the loop is off.
 - **Stop** keeps the position. Press it again to go back to the start.
 - **Loop** turns the loop brace on and off.
+- **Metronome** (the metronome icon, key M) turns a soft, woody MPC-style click on or off. It's on/off only: its level is fixed at half a fresh track's default volume and ignores the track sliders. It clicks on every beat of the time signature (accent on beat 1), on the same scheduler as the notes, so it stays in time through loops, BPM changes and Back to start. Pressing Play from stopped with the click on gives a 1-bar count-in. The on/off is saved with the project (`"metronome": true` in the JSON; older files open with it off) and is not part of the MIDI export.
 - **Keyboard:**
 
 | Key | Action |
@@ -90,13 +91,13 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Tests
 
-`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords), and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords; v8.2's low-E-left detail neck and no finger numbers), the metronome (beat ticks in 4/4, 3/4 and 6/8, the beat-1 accent, the count-in, the fixed 0.5× default-track level, sync through loops, BPM changes and Back to start, the JSON round trip and MIDI), and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
 
 ```sh
 cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs
 ```
 
-Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. To go back to v7, see [docs/ROLLBACK.md](docs/ROLLBACK.md).
+Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `node loadbench.mjs` measures a cold first load (bytes, requests, DOMContentLoaded and load), and `node bench.mjs` times redraws and edits. To go back to v7, see [docs/ROLLBACK.md](docs/ROLLBACK.md).
 
 ## MIDI export
 

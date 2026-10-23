@@ -10,6 +10,12 @@ v7 is the last release before per-track feel, the chord library and the share fi
 A zip of the built v7 `guitar-tab/` folder (as published on jeremylegalrecords.com) is kept at
 `/workspace/github-tab-rollback/guitar-tab-v7.zip`.
 
+## v8.2 → v8.1
+
+v8.2 (chord-detail neck low E on the left, no finger numbers, metronome click) adds one optional project field,
+`metronome`, and keeps schemaVersion 5. v8.1 ignores the field, so going back loses only the click setting. The v8.1
+release is github-tab `ba16b0a` and site `052da1d` (`git checkout 052da1d -- guitar-tab`).
+
 ## v8.1 → v8
 
 v8.1 (movable power and barre chords, chart-order boxes) changes only the chord library and its tests; saved tabs and

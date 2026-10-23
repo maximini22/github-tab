@@ -17,7 +17,7 @@ The editor is built to fit a phone screen with no page scrolling. It has been ch
 | Area | What it holds |
 |---|---|
 | Header | JLR · Guitar Tab (links to the about page), the save status, and **☰** to open the menu |
-| Transport | **Back to start**, **Play/Pause**, **Stop**, **Loop**, and **BPM** with − and + (tap for ±1, hold to run) |
+| Transport | **Back to start**, **Play/Pause**, **Stop**, **Loop**, **Metronome** (click on/off), and **BPM** with − and + (tap for ±1, hold to run) |
 | Toolbar | **Grid** (note value, 1/1 to 1/64), the armed track's number and its **· | 3** note-style switch (Dotted, Triplet), **‹ ›** to move one grid step, the cursor position as `bar|beat|16th` (plus `+ticks` on fine grids, for example `1|2|3+40`), **Undo** and **Redo** |
 | Track strip | One row per track: colour, name, tuning, **M**, **S** and a volume slider. Tap the name to arm that track for editing. **+ Track (n/3)** appears while there's room. |
 | Ruler | Top lane: bar numbers and the loop brace. Bottom lane: beat counts (1 e & a 2 …, and `trip`/`let` on triplet grids). The green playhead line runs through the ruler and the grid. |
@@ -58,15 +58,15 @@ The fret picker doubles as a screen you can stay on and step through whole bars:
 Tap **Chords** in the step editor. The library opens over it, for the armed track and the cursor's bar and step (the header says which, for example `Guitar 1 · E std · Bar 2 · step 5/8`).
 
 - **30 boxes** in four groups: **Open** (C, G, D, Dm, Em, E, A, Am, E7, A7), **Power** (all 12 roots, E5 to D#5), **Barre** (F, Bm, B, F#m, all movable) and **Other** (Bdim, Caug, Dsus4, Asus2). Search by name or quality (`Em`, `F#5`, `A5`, `Gb5`, `power`, `sus`, `minor`, `dim`), by fret code (`244` finds F#5 and F#m `244222`; `577` finds A5; codes match from the low E end, so `244` doesn't find B5 `x244`), or tap a family chip.
-- **How to read a box** (since v8.1): like a chord book, **low E on the left, high e on the right**, nut at the top, with the string names (E A D G B e, or the track's tuning, e.g. D A D G B e) under the box. Rings above the nut are open strings, × is a string you don't play, numbers are fingers, a bar across the strings is a barre, and a number left of the box is the starting fret. The fret code under the name reads the same way, low E first: Em = `022000`, A = `x02220`, F#5 = `244`. Frets above 9 are separated by dashes (`10-12-12`).
-- **Two views, labelled:** the boxes and codes are chart order (low E left). The big neck in the detail view is the app's own neck, the same way round as the tab lanes (**high e on the left**), and says so above it ("Neck view · high e on the left"). The string chips beside it run low E first, like the code.
+- **How to read a box** (since v8.1): like a chord book, **low E on the left, high e on the right**, nut at the top, with the string names (E A D G B e, or the track's tuning, e.g. D A D G B e) under the box. Rings above the nut are open strings, × is a string you don't play, a dot is a fretted note, a bar across the strings is a barre, and a number left of the box is the starting fret. Finger numbers aren't drawn (since v8.2), so F5 `133` is simply three dots. The fret code under the name reads the same way, low E first: Em = `022000`, A = `x02220`, F#5 = `244`. Frets above 9 are separated by dashes (`10-12-12`).
+- **One way round everywhere in the chord library** (since v8.2): the big neck in the detail view also has **low E on the left** (E A D G B e, or the track's tuning, e.g. D A D G B e in Drop D), so it matches the box, the code and the string list beside it. Its dots are plain highlighted dots. The tab lanes, the mini roll and the fret picker's string list still put high e at the top, as before.
 - **Power chords (movable):** one card per root. Roots on the 6th string up to fret 7 use the 6th-string shape r, r+2, r+2 on strings 6-5-4 (E5 `022`, F5 `133`, F#5 `244`, G5 `355`, G#5 `466`, A5 `577`, A#5 `688`, B5 `799`); the rest use the 5th-string shape on strings 5-4-3 (C5 `x355`, C#5 `x466`, D5 `x577`, D#5 `x688`). Open a power chord and:
   - **6th / 5th** moves it to the other root string at the same pitch (A5 `577` ↔ `x022`);
   - **‹ fret ›** slides it a fret at a time; the name follows the root (A5 › A#5 › B5), down to the open position and up until the top note reaches fret 22;
   - **1·5·8 / 1·5** chooses 3 notes (root, 5th, octave) or 2 (root and 5th).
   - Frets come from the real string intervals of the armed track's tuning, so in **Drop D / Drop C** the 6th-string power chord is a one-finger barre r, r, r (Drop D: D5 `000`, E5 `222`, G5 `555`).
 - **Barre chords (movable):** F (`133211`), Bm (`x24432`), B (`x24442`) and F#m (`244222`) have the same ‹ fret › stepper and an **E shape / A shape** toggle, which moves the chord to the other shape at the same root (F at fret 3 = G `355433`, then A shape = G `x-10-12-12-12-10`). In another tuning the card keeps its root note at the lowest fret that gives it (F in Drop D = `333211`).
-- **Preview:** tap a chord. It's drawn on the neck, the shape chips list each string (low E first) with its fret and finger, the mini roll shows where its notes would land in the bar (in yellow), and you hear it. On a short screen the chord list hides while you look at one; **Cancel** or Esc goes back to it.
+- **Preview:** tap a chord. It's drawn on the neck, the string list beside it shows each string (low E first) as **fret 5**, **open** or **muted**, the mini roll shows where its notes would land in the bar (in yellow), and you hear it. On a short screen the chord list hides while you look at one; **Cancel** or Esc goes back to it.
 - **Strum ↓** puts all its notes on the cursor step. **Arp** spreads them out, one note per grid step, lowest string first (so on a 1/8 grid an Em arpeggio takes 6 eighths). The choice is remembered.
 - **Drop into measure** writes the notes on the armed track:
   - strings marked × are skipped, and any note already on them stays;
@@ -106,6 +106,12 @@ All audible tracks play **together, in sync**. Tracks that won't be heard are di
 - **The ruler** lets you tap or drag the bottom lane (beat numbers) to move the playhead, even while playing.
 - **The loop brace** is set in the ruler's top lane (bar numbers). Drag across bars to set a loop range, or drag either end of the brace to change it. Setting a range switches the loop on. **Loop** in the transport toggles it on and off. In the menu, **Loop from this bar** and **Loop to this bar** set the ends at the cursor's bar.
 - With the loop off, playback stops at the end of the song and the playhead returns to the start.
+- **Metronome** (the metronome icon next to Loop, or key **M**) turns a click on and off. There is no volume control: the level is fixed at **half of what a fresh track's default volume gives**, and the track volume sliders don't change it.
+  - The sound is a short, soft, woody tick (a filtered noise burst plus a tiny sine blip, about 15 ms), made in the browser; there are no sample files.
+  - It clicks once per beat of the time signature (quarters in 4/4, 3/4 and 2/4; the dotted quarter in 6/8). Beat 1 is a little higher and louder.
+  - It runs on the same scheduler as the notes, so it stays in time through loops, BPM changes (including holding − / +) and **Back to start**, and you can switch it on or off while playing.
+  - **Count-in:** pressing Play from stopped with the click on gives one bar of clicks first.
+  - On/off is saved with each project and in its JSON file. It is not written to MIDI.
 
 ## BPM, time signature and grid
 
@@ -234,9 +240,10 @@ Use this when you want to be sure an export brings everything back:
 
 1. **Share:** with `navigator.share`, `canShare` and the clipboard mocked, every branch: the file share (a `.json.txt`, `text/plain`, holding the project), the text share, the clipboard copy, the download, cancel (AbortError) staying silent, and a shared `.json.txt` importing back.
 2. **Per-track feel:** the toggles change the armed track only, the toolbar track number and row badges, per-track steps and lanes, the cursor keeping its tick when arming, undo/redo of a style, playback timing of a straight track against a triplet track, the text tab, a mixed straight + triplet project round-tripping through Export/Import, the v7 copy and rollback pick-up, and the "newer version" message.
-3. **Chord library:** opening from the step editor, 30 boxes in 4 groups with chip counts, search, the low-E-left boxes with string labels and chart-order codes (Em 022000, A x02220), the detail view (code labelled low E → high e, preview roll, neck marks and caption, low-E-first chips), Strum drop (6 notes, replacing old ones), the toast's Undo, × strings skipped (D), Arp one step apart low string first, an Arp that adds a bar and its one-step undo, tuning-aware names (Dm (Em shape)), dropping onto the armed track, and Escape.
-4. **Movable shapes (v8.1):** search by `244` (F#5, not B5), `577` and `A5`; F#5 = 244 dropped on strings 6/5/4; the A5 detail (577, fret 5); the stepper (B5 799, D5 10-12-12, stops at fret 20/22 and at the open E5 022); the 6th/5th toggle keeping the root (x022, C5 x355 on strings 5/4/3, back to 8-10-10); 2-note mode; the E/A-shape barre toggle (G 355433 → x-10-12-12-12-10); and a Drop D track where E5 = 222 with a one-finger barre and the box strings read D A D G B e.
+3. **Chord library:** opening from the step editor, 30 boxes in 4 groups with chip counts, search, the low-E-left boxes with string labels and chart-order codes (Em 022000, A x02220), the detail view (code labelled low E → high e, preview roll, low-E-first chips; since v8.2 the neck columns read E A D G B e with Em's dots on the A and D columns, no orientation caption, and no finger numbers in boxes, on the neck or in the string list), Strum drop (6 notes, replacing old ones), the toast's Undo, × strings skipped (D), Arp one step apart low string first, an Arp that adds a bar and its one-step undo, tuning-aware names (Dm (Em shape)), dropping onto the armed track, and Escape.
+4. **Movable shapes (v8.1):** search by `244` (F#5, not B5), `577` and `A5`; F#5 = 244 dropped on strings 6/5/4; the A5 detail (577, fret 5); the stepper (B5 799, D5 10-12-12, stops at fret 20/22 and at the open E5 022); the 6th/5th toggle keeping the root (x022, C5 x355 on strings 5/4/3, back to 8-10-10); 2-note mode; the E/A-shape barre toggle (G 355433 → x-10-12-12-12-10); and a Drop D track where E5 = 222 with a one-finger barre and the box strings read D A D G B e. v8.2 adds A5 `577` on the neck's leftmost three columns with × over G B e, the Drop D neck labels D A D G B e with the barre across the first three columns, and a check that the fret picker's string list is still e B G D A E.
 5. **No scroll:** the page, step editor, chord grid, chord detail and a power-chord detail with its stepper row at 390×844, 390×650 and 360×640.
+6. **Metronome (v8.2):** the toggle (aria-label Metronome, off by default, no volume control), clicks on beat ticks in 4/4, 3/4 and 6/8 with the accent on beat 1, the 1-bar count-in, the level fixed at 0.5 × a fresh track's default-volume gain and unchanged by the track slider, sync with the notes through the loop, Back to start and a BPM change mid-play, no clicks when off, identical MIDI with it on or off, the JSON round trip (and older files opening with it off), and the transport fitting at 390×844, 390×650 and 360×640.
 
 `tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. For v8 it also checks schema 5 (a mixed straight + triplet project's MIDI ticks, parse-back, the v7 copy, unknown styles, newer files) and the chord data: all 30 E-standard cards give the right notes with the root in the bass, × strings skipped, chart-order codes, the 12 power cards (F#5 244, A5 577, C5 x355), 2-note versions, the fret-22 cap, the 6th↔5th pair, Drop D r-r-r power chords, the movable barre shapes, box orientation and string labels, code search, and the tuning-aware names. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
@@ -257,7 +264,7 @@ It prints one PASS/FAIL line per check and exits non-zero on any failure. `node 
 
 | In a DAW | In Guitar Tab |
 |---|---|
-| Transport: return to zero, play, stop, cycle | **Back to start**, **Play/Pause**, **Stop** (again = to start), **Loop** |
+| Transport: return to zero, play, stop, cycle, click | **Back to start**, **Play/Pause**, **Stop** (again = to start), **Loop**, **Metronome** |
 | Tempo field | **BPM** with − and + (per project) |
 | Bar ruler, playhead, cycle/loop brace | Ruler: bar numbers and the loop brace on top, beats below. Drag to set the loop, tap or drag to move the playhead. |
 | Track headers: record-arm/select, mute, solo, fader | Track strip: tap a name to **arm**, **M**, **S**, volume slider |
@@ -280,6 +287,7 @@ When a keyboard is attached:
 | Space | Play / pause |
 | Home | Back to start |
 | L | Loop on/off |
+| M | Metronome on/off |
 | ← → | Move one grid step |
 | ↑ ↓ | Move between strings |
 | Enter | Open the fret picker at the cursor |
@@ -311,6 +319,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
     "timeSignature": [4, 4],
     "lengthTicks": 3840,              // whole bars
     "loop": { "enabled": true, "startMeasure": 1, "endMeasure": 2 },   // bars from 1, end included
+    "metronome": false,               // v8.2: click on/off (optional; missing = off; not in MIDI)
     "idea": "Verse riff",
     "createdAt": "…", "updatedAt": "…", "activeTrackId": "…",
     "tracks": [{                      // 1 to 3 tracks
@@ -331,6 +340,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 - **Strings:** `string` runs from 1 (high) to 6 (low). `tuning.midi` lists the open strings in that order. Each is a MIDI note from 0 to 105, so even fret 22 stays inside MIDI's 0–127 range. **Pitch = `tuning.midi[string − 1] + fret`.**
 - **Notes:** `fret` is 0–22 (0–16 before v6; older files are a subset, so the schemaVersion stays 4), and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.
+- **Metronome:** `metronome` (since v8.2) is optional, so the schemaVersion stays 5: older files without it open with the click off, and v8/v8.1 ignore it. The v7 copy kept in the browser leaves it out.
 - **Not in files:** the playhead position, which is kept per project in this browser only.
 - **Limits:** 3 tracks (larger imports keep the first 3), 999 bars, 20,000 notes per track, a 120-character title, 60-character track names and 500-character idea notes.
 
