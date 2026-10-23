@@ -1,191 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
-<meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex">
-<meta name="theme-color" content="#0b1220">
-<meta name="color-scheme" content="dark">
-<meta name="description" content="Write guitar tabs on your phone. Saves in your browser.">
 <title>Guitar Tab · Jeremy Legal Records</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<meta name="description" content="Catch a guitar idea as tab on your phone. Up to 3 tracks, layered playback, six tunings. No subscription, nothing goes online.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b1220">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="icons/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="css/jlr-theme.css">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-<div class="phone-col">
-<header class="app-header">
-  <div class="bar">
+
+<header class="top">
+  <div class="wrap">
     <a class="brand" href="https://jeremylegalrecords.com/" aria-label="Jeremy Legal Records home">
-      <img class="logo-mark" src="assets/jlr-logo.png" alt="Jeremy Legal Records" width="107" height="160">
-      <span class="brand-title"><span class="w">JLR</span><span class="dot">•</span><span class="t">Guitar Tab</span></span>
+      <img src="assets/jlr-logo.png" alt="" width="107" height="160">
+      <span>Jeremy Legal<br>Records</span>
     </a>
-    <span class="save-state" id="save-state" aria-live="polite"></span>
   </div>
 </header>
 
-<main class="shell">
-  <!-- Project -->
-  <section class="card">
-    <label class="sec-lab" for="project-select">Project</label>
-    <div class="row">
-      <select id="project-select" class="field grow" aria-label="Project"></select>
-      <button type="button" class="btn sm" id="project-new" aria-label="New project">+ New</button>
-    </div>
-    <label class="sec-lab mt" for="title">Project title</label>
-    <input id="title" class="field" type="text" maxlength="120" placeholder="Untitled project" autocomplete="off" enterkeyhint="done">
-    <div class="row mt">
-      <button type="button" class="btn sm" id="project-dup">Duplicate</button>
-      <button type="button" class="btn sm warn" id="project-del">Delete project</button>
-    </div>
-  </section>
-
-  <!-- Track -->
-  <section class="card">
-    <span class="sec-lab">Tracks</span>
-    <div class="chips" id="track-chips" role="tablist" aria-label="Tracks"></div>
-    <label class="sec-lab mt" for="track-name">Track name</label>
-    <input id="track-name" class="field" type="text" maxlength="60" placeholder="Track name" autocomplete="off" enterkeyhint="done">
-    <div class="row mt">
-      <div class="grow">
-        <label class="sec-lab" for="tuning">Tuning</label>
-        <select id="tuning" class="field"></select>
-      </div>
-      <div class="ts">
-        <label class="sec-lab" for="timesig">Time</label>
-        <select id="timesig" class="field">
-          <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option><option value="6/8">6/8</option>
-        </select>
-      </div>
-    </div>
-    <div class="row mt"><button type="button" class="btn sm warn" id="track-del">Delete track</button></div>
-  </section>
-
-  <!-- Editor -->
-  <section class="card">
-    <div class="card-row">
-      <span class="card-h">Editor</span>
-      <span class="col-info" id="col-info"></span>
-    </div>
-    <p class="hint">Grid sets the step size for the whole project, like snap in a DAW: every column is one grid step and Next moves one step. Changing it never moves or deletes notes; a note that sits between grid lines shows an amber dot. Tap the timeline to move the green playhead (drag to scrub); tap a string to pick a fret, the teal box is where you are editing.</p>
-    <span class="sec-lab">Grid / snap</span>
-    <div class="chips dur-chips" id="dur-chips" role="radiogroup" aria-label="Grid resolution"></div>
-    <div class="chips mt-s">
-      <button type="button" class="chip" id="dot-toggle" aria-pressed="false">Dotted</button>
-      <button type="button" class="chip" id="trip-toggle" aria-pressed="false">Triplet</button>
-    </div>
-    <div class="ruler-wrap mt" id="ruler-wrap" aria-label="Timeline: tap a grid step to move the playhead, drag to scrub">
-      <div class="ruler" id="ruler"></div>
-    </div>
-    <div class="editor-wrap" id="editor-wrap">
-      <div class="editor" id="editor" role="grid" aria-label="Tab editor"></div>
-    </div>
-    <div class="grid2 mt">
-      <button type="button" class="btn sm" id="prev-col">‹ Prev</button>
-      <button type="button" class="btn sm" id="next-col">Next ›</button>
-      <button type="button" class="btn sm" id="add-col">+ Insert step</button>
-      <button type="button" class="btn sm warn" id="del-col">− Delete step</button>
-      <button type="button" class="btn sm" id="add-measure">+ Add measure</button>
-      <button type="button" class="btn sm warn" id="del-measure">− Last measure</button>
-    </div>
-    <button type="button" class="btn sm wide mt-s" id="clear-col">Clear this step</button>
-  </section>
-
-  <!-- Playback -->
-  <section class="card">
-    <span class="card-h">Play</span>
-    <div class="transport">
-      <button type="button" class="btn tbtn" id="play-start" aria-label="Play from start">
-        <span class="ico" aria-hidden="true">⏮</span><span>From start</span></button>
-      <button type="button" class="btn go tbtn" id="play-btn" aria-label="Play from playhead">
-        <span class="ico" aria-hidden="true">▶</span><span id="play-label">Play</span></button>
-      <button type="button" class="btn tbtn" id="stop-btn" aria-label="Stop">
-        <span class="ico" aria-hidden="true">■</span><span>Stop</span></button>
-    </div>
-    <div class="row mt-s">
-      <span class="ph-info grow" id="ph-info"></span>
-      <div class="bpm">
-        <button type="button" class="btn sm" id="bpm-down" aria-label="Slower">−</button>
-        <label class="bpm-val"><input id="bpm" class="field" type="number" inputmode="numeric" min="30" max="300" step="1" aria-label="BPM"><small>BPM</small></label>
-        <button type="button" class="btn sm" id="bpm-up" aria-label="Faster">+</button>
-      </div>
-    </div>
-    <span class="sec-lab mt">Loop</span>
-    <div class="row">
-      <button type="button" class="chip" id="loop-toggle" aria-pressed="false">Loop off</button>
-      <span class="loop-info" id="loop-info"></span>
-    </div>
-    <div class="grid2 mt-s">
-      <button type="button" class="btn sm" id="loop-start">⟦ Start at this measure</button>
-      <button type="button" class="btn sm" id="loop-end">End at this measure ⟧</button>
-    </div>
-    <p class="hint">Play resumes from the playhead (from the loop start if the playhead is outside the loop). From start goes to the loop start, or the top of the track when the loop is off. Stop leaves the playhead where it stopped; press Stop again to return to the start.</p>
-  </section>
-
-  <!-- Text tab -->
-  <section class="card">
-    <div class="card-row">
-      <span class="card-h">Tab as text</span>
-      <button type="button" class="btn sm" id="copy-ascii">Copy text</button>
-    </div>
-    <pre class="ascii" id="ascii" aria-label="Tab as text"></pre>
-  </section>
-
-  <!-- Files -->
-  <section class="card">
-    <span class="card-h">Files</span>
-    <div class="grid2">
-      <button type="button" class="btn go" id="export-one">Export project</button>
-      <button type="button" class="btn" id="export-all">Export all</button>
-      <button type="button" class="btn" id="import-btn">Import .json</button>
-      <button type="button" class="btn" id="share-btn" hidden>Share project</button>
-    </div>
-    <input type="file" id="import-file" accept=".json,application/json" hidden>
-    <p class="hint">Everything saves in this browser as you go. Export is your backup and how you move tabs to another phone or computer.</p>
-  </section>
-</main>
-</div>
-
-<!-- Fret picker: vertical neck, nut at the top -->
-<div class="sheet-scrim" id="scrim" hidden></div>
-<section class="sheet" id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-h" hidden>
-  <div class="sheet-head">
+<main>
+<section class="hero">
+  <div class="wrap">
     <div>
-      <span class="card-h" id="picker-h">Pick a fret</span>
-      <span class="picker-sub" id="picker-sub"></span>
+      <div class="pill-new"><b>NEW</b> Guitar Tab by JLR</div>
+      <h1>Riff in your head.<br><span class="grad">Tab on your phone.</span></h1>
+      <p class="sub">Catch a guitar idea in seconds. <b>No subscription. Nothing goes online.</b></p>
+      <ul class="points">
+        <li>Projects you can export and import as .json</li>
+        <li class="t0">Up to 3 tracks on one grid</li>
+        <li class="t1">Layered playback with mute, solo and volume</li>
+        <li class="t2">Six tunings, C standard to Open G</li>
+        <li>Saved in this browser only</li>
+      </ul>
+      <div class="ctas">
+        <a class="btn go" href="./app/">Try it <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <p class="fine">Free. Works in your phone's browser.</p>
     </div>
-    <button type="button" class="btn sm go" id="picker-done">Done</button>
-  </div>
-  <div class="picker-body">
-    <div class="neck" id="neck" role="group" aria-label="Frets 0 to 16"></div>
-    <div class="picker-side">
-      <span class="sec-lab">String</span>
-      <div class="pstrings" id="picker-strings" role="radiogroup" aria-label="String, high e at the top, low E at the bottom"></div>
-      <button type="button" class="btn sm" id="pick-mute">x Muted</button>
-      <button type="button" class="btn sm" id="pick-clear">Clear</button>
-      <p class="picker-tip" id="picker-tip" aria-live="polite"></p>
-      <p class="picker-grid" id="picker-grid"></p>
-      <button type="button" class="btn sm" id="picker-next">Next step ›</button>
+    <div class="stage" aria-hidden="true">
+      <div class="phone p2"><img src="assets/shots/app-playing.png" alt="" width="780" height="1688"></div>
+      <div class="phone p1"><img src="assets/shots/app-tracks.png" alt="" width="780" height="1688"></div>
+      <div class="float f1"><i></i><div>3 tracks, one grid<small>The armed track in full, the rest faint</small></div></div>
+      <div class="float f2"><i></i><div>Mute · Solo · Volume<small>Hear the parts together</small></div></div>
     </div>
   </div>
 </section>
+</main>
 
-<!-- Import choice -->
-<div class="sheet-scrim" id="modal-scrim" hidden></div>
-<section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-h" hidden>
-  <span class="card-h" id="modal-h">Import</span>
-  <p id="modal-body"></p>
-  <div class="modal-actions" id="modal-actions"></div>
-</section>
-
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-
-<script src="js/audio.js"></script>
-<script src="js/model.js"></script>
-<script src="js/app.js"></script>
+<footer>
+  <div class="wrap">
+    <img src="assets/jlr-logo.png" alt="" width="107" height="160">
+    <span>© 2026 Jeremy Legal Records</span>
+    <span class="links"><a href="https://github.com/maximini22/github-tab/blob/main/docs/USER-GUIDE.md">User guide</a><a href="https://github.com/maximini22/github-tab/blob/main/LICENSE">Code MIT</a></span>
+  </div>
+</footer>
 </body>
 </html>

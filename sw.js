@@ -1,44 +1,14 @@
-/* Minimal offline cache for the app shell. Bump VERSION when shell files change. */
-var VERSION = 'guitar-tab-v3';
-var SHELL = [
-  './',
-  './index.html',
-  './css/jlr-theme.css',
-  './css/app.css',
-  './js/audio.js',
-  './js/model.js',
-  './js/app.js',
-  './manifest.webmanifest',
-  './assets/jlr-logo.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/maskable-192.png',
-  './icons/maskable-512.png',
-  './icons/favicon-32.png',
-  './icons/apple-touch-icon.png'
-];
-
-self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
-});
-
+/* Retired. Up to v3 the app lived at the site root and registered this worker for the whole site.
+ * The app now lives at /app/ (with its own worker, app/sw.js) and the root is a plain page.
+ * This version removes the old root worker and its old caches, then reloads any root page it controlled
+ * so visitors see the current front page. Your saved projects (localStorage) are not touched. */
+self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k.indexOf('guitar-tab-') === 0 && k !== VERSION; }).map(function (k) { return caches.delete(k); }));
-  }).then(function () { return self.clients.claim(); }));
-});
-
-// Network first for page loads (so updates show up), cache first for static files.
-self.addEventListener('fetch', function (e) {
-  var req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
-  if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(function (res) {
-      var copy = res.clone();
-      caches.open(VERSION).then(function (c) { c.put('./index.html', copy); });
-      return res;
-    }).catch(function () { return caches.match('./index.html'); }));
-    return;
-  }
-  e.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req); }));
+    return Promise.all(keys.filter(function (k) { return /^guitar-tab-v[123]$/.test(k); }).map(function (k) { return caches.delete(k); }));
+  }).then(function () { return self.registration.unregister(); })
+    .then(function () { return self.clients.matchAll({ type: 'window' }); })
+    .then(function (list) {
+      list.forEach(function (c) { if (c.url.indexOf('/app/') < 0 && c.navigate) c.navigate(c.url); });
+    }));
 });

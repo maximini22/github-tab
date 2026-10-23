@@ -1,4 +1,4 @@
-/* Web Audio plucked-string synth (Karplus-Strong) and a lookahead step scheduler. Exposed as window.TabAudio. */
+/* Web Audio plucked-string synth (Karplus-Strong) and a lookahead step scheduler for layered tracks (per-note gain). Exposed as window.TabAudio. */
 (function () {
   'use strict';
   var ctx = null, master = null, unlocked = false;
@@ -59,7 +59,8 @@
     var muted = !!opts.muted;
     var src = c.createBufferSource(), g = c.createGain();
     src.buffer = pluckBuffer(midi, muted);
-    var vol = (muted ? 0.35 : 0.5) * (opts.gain || 1);
+    var vol = (muted ? 0.35 : 0.5) * (opts.gain == null ? 1 : opts.gain);
+    if (vol <= 0) return;
     var end = when + Math.max(0.08, dur) + (muted ? 0 : 0.04);
     g.gain.setValueAtTime(vol, when);
     g.gain.setTargetAtTime(0, end, 0.04);
@@ -75,7 +76,7 @@
   function play(opts) {
     stop();
     unlock(); var c = ensure(); if (!c) return false;
-    // opts: { count, startAt, stepAt(i) -> {ticks, notes:[{midi, muted, offset (ticks into the step), ticks (length)}]}, bpm(), ppq, loop, onStep(i|null) }
+    // opts: { count, startAt, stepAt(i) -> {ticks, notes:[{midi, muted, offset (ticks into the step), ticks (length), gain (0-1), track}]}, bpm(), ppq, loop, onStep(i|null) }
     playing = { opts: opts, i: Math.max(0, Math.min((opts.count || 1) - 1, opts.startAt || 0)), next: c.currentTime + 0.08, queue: [], raf: 0 };
     log = []; t0 = playing.next;
     timer = setInterval(tick, 25);
@@ -104,9 +105,12 @@
       var st = o.stepAt(P.i);
       var secs = st.ticks / o.ppq * 60 / o.bpm();
       var spt = 60 / o.bpm() / o.ppq; // seconds per tick
+      // Layered tracks: each note carries its track's volume; thin out big stacks so 3 tracks don't clip.
+      var stack = st.notes.length > 6 ? 0.6 : st.notes.length > 2 ? 0.8 : 1;
       st.notes.forEach(function (n) {
-        if (log.length < 500) log.push({ midi: n.midi, muted: !!n.muted, at: +(P.next + (n.offset || 0) * spt - t0).toFixed(4), step: P.i });
-        note(n.midi, P.next + (n.offset || 0) * spt, (n.ticks || st.ticks) * spt, { muted: n.muted, gain: st.notes.length > 2 ? 0.8 : 1 });
+        var gain = (n.gain == null ? 1 : n.gain) * stack;
+        if (log.length < 2000) log.push({ midi: n.midi, muted: !!n.muted, at: +(P.next + (n.offset || 0) * spt - t0).toFixed(4), step: P.i, track: n.track == null ? null : n.track, gain: +gain.toFixed(3) });
+        note(n.midi, P.next + (n.offset || 0) * spt, (n.ticks || st.ticks) * spt, { muted: n.muted, gain: gain });
       });
       P.queue.push({ t: P.next, i: P.i });
       P.next += secs; P.i++;

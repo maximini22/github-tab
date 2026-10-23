@@ -1,0 +1,144 @@
+{
+  "schema": "jlr-guitar-tab",
+  "schemaVersion": 3,
+  "kind": "project",
+  "ppq": 480,
+  "exportedAt": "2026-10-23T07:52:09.599Z",
+  "activeProjectId": "5nww2rq397ho",
+  "projects": [
+    {
+      "id": "5nww2rq397ho",
+      "title": "RT v3",
+      "bpm": 137,
+      "grid": {
+        "value": "eighth",
+        "dotted": false,
+        "tuplet": null
+      },
+      "createdAt": "2026-10-23T07:52:06.444Z",
+      "updatedAt": "2026-10-23T07:52:09.499Z",
+      "activeTrackId": "0zhr3k4z997s",
+      "tracks": [
+        {
+          "id": "v1g7xybq97ho",
+          "name": "Guitar",
+          "tuning": {
+            "id": "drop-d",
+            "name": "Drop D (DADGBE)",
+            "midi": [
+              64,
+              59,
+              55,
+              50,
+              45,
+              38
+            ]
+          },
+          "timeSignature": [
+            4,
+            4
+          ],
+          "loop": {
+            "enabled": false,
+            "startMeasure": 1,
+            "endMeasure": 1
+          },
+          "lengthTicks": 3840,
+          "notes": [
+            {
+              "string": 6,
+              "fret": 0,
+              "startTick": 0,
+              "durationTicks": 480,
+              "techniques": []
+            },
+            {
+              "string": 5,
+              "fret": 3,
+              "startTick": 480,
+              "durationTicks": 1920,
+              "techniques": []
+            }
+          ]
+        },
+        {
+          "id": "v9dp2qx098nw",
+          "name": "Track 2",
+          "tuning": {
+            "id": "open-g",
+            "name": "Open G (DGDGBD)",
+            "midi": [
+              62,
+              59,
+              55,
+              50,
+              43,
+              38
+            ]
+          },
+          "timeSignature": [
+            4,
+            4
+          ],
+          "loop": {
+            "enabled": false,
+            "startMeasure": 1,
+            "endMeasure": 1
+          },
+          "lengthTicks": 3840,
+          "notes": [
+            {
+              "string": 1,
+              "fret": 5,
+              "startTick": 240,
+              "durationTicks": 480,
+              "techniques": []
+            },
+            {
+              "string": 3,
+              "fret": 7,
+              "startTick": 720,
+              "durationTicks": 1920,
+              "techniques": []
+            }
+          ]
+        },
+        {
+          "id": "0zhr3k4z997s",
+          "name": "Track 3",
+          "tuning": {
+            "id": "d-standard",
+            "name": "D Standard (DGCFAD)",
+            "midi": [
+              62,
+              57,
+              53,
+              48,
+              43,
+              38
+            ]
+          },
+          "timeSignature": [
+            4,
+            4
+          ],
+          "loop": {
+            "enabled": true,
+            "startMeasure": 2,
+            "endMeasure": 2
+          },
+          "lengthTicks": 3840,
+          "notes": [
+            {
+              "string": 4,
+              "fret": 2,
+              "startTick": 960,
+              "durationTicks": 1920,
+              "techniques": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
