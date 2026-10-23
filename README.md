@@ -14,15 +14,17 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - A DAW-style transport, a bar|beat ruler, a loop brace, and 100 undo steps.
 - Fits a phone screen with no page scroll. Only the tab grid scrolls sideways.
 - Auto-save, plus Export and Import as `.json`.
+- **MIDI export (.mid):** all tracks in one Type 1 file (one lane per track), or one track on its own.
+- **Step editor:** the fret picker has Back/Next step, bar jumps, a yellow highlight on the selected string and a mini tab roll of the bar.
 
 ## Quick start
 
 1. Open the app and tap **Got it** on the hint.
-2. Tap a cell in a string lane, tap a fret (0–16) or **x Muted**, then **Done**. **Next step ›** lets you enter a run quickly.
+2. Tap a cell in a string lane, then tap a fret (0–16) or **x Muted**. Use **‹ Back step / Next step ›** and **« Bar / Bar »** to step through bars, then tap **Done**.
 3. Press **Play** (or Space). Set **BPM** with − and +.
 4. Add a part with **+ Track**, then tap its name to arm it and write on it.
 5. Drag across bar numbers in the ruler to loop a section.
-6. **☰ → Export project (.json)** to keep a backup.
+6. **☰ → Export project (.json)** to keep a backup, or **Export MIDI (.mid)** for a DAW.
 
 ## Tracks and mixer
 
@@ -68,34 +70,36 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
   - **Replace** swaps your whole library for the file, after a confirm.
 - **Moving between devices or addresses** (for example from maximini22.github.io/github-tab to jeremylegalrecords.com/guitar-tab): Export all on the old one, then Import with Merge on the new one.
 - Older files (schemaVersion 1–3) open fine.
+- **☰ → Export MIDI (.mid):** see [MIDI export](#midi-export).
 
-## JSON round-trip test
+## Tests
 
-This builds a project through the real UI in headless Chrome, then exports, clears, re-imports, deep-compares and plays it:
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `midi.mjs` parse-tests the MIDI encoder in Node.
 
 ```sh
-cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
+cd tests && npm install && node midi.mjs && CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
 ```
 
 Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site.
 
-## MIDI (planned, not built yet)
+## MIDI export
 
-- A Type 1 Standard MIDI File at PPQ 480, the same ticks as the JSON. Track 0 carries tempo, time signature and loop markers. Then there's one MIDI track per guitar track, with its name, channel and CC7 volume.
-- Pitch = open string + fret. The JSON keeps string and fret, so it stays the source of truth.
-- An optional **one channel per string** mode, plus text events such as `s3f7`, so tab software can rebuild exact positions.
-- Muted notes export as short low-velocity notes, or can be skipped. A mute/solo option exports either "as heard" or all tracks.
+- **☰ → Export MIDI (.mid)** offers **All tracks**, saved as `<project>.mid`, or one track, saved as `<project> - <track>.mid`.
+- It's a Type 1 file at PPQ 480, the same ticks as the JSON. Track 0 holds the tempo, time signature and loop markers. Each guitar track is its own named track on its own channel (1–3), with Program 25 and CC7 = volume.
+- **All tracks includes muted or unsoloed tracks.** They're labelled `(muted)` / `(not soloed)` and keep their volume.
+- Pitch = open string + fret. Each note carries a `s3f7`-style text event, so the string and fret can be rebuilt.
+- Muted notes are short at velocity 30. Hammer-on and pull-off are legato. Bends, slides and vibrato are not exported yet.
+- Details: [guide](docs/USER-GUIDE.md#midi-export).
 
 ## Roadmap
 
 All of these are planned, with no promised dates:
 
-- **MIDI export** (Type 1, with an option for one channel per string)
+- **MIDI: one channel per string** mode, bends/slides/vibrato as pitch bend, guitar sound choices
 - **Hammer-on, pull-off, slide, bend and vibrato** in the editor (files already accept them)
 - **Let-ring / sustain**, plus palm-mute, harmonics and tapping
 - **Sliding-strip tuner mode**
 - **Koala export**
-- More from the [MIDI export plan](docs/USER-GUIDE.md#midi-export-plan), such as guitar sound choices for export
 
 ## Publishing (maintainers)
 

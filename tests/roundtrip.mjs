@@ -1,4 +1,4 @@
-// JSON round-trip test for Guitar Tab (v4).
+// JSON round-trip test for Guitar Tab (v4 data, v5 app), plus the v5 step editor and MIDI export through the UI.
 //
 // Builds a 3-track project through the real UI (different tunings, notes, a muted note, BPM 137, a loop,
 // mixed volume/mute/solo, idea notes, a non-default grid), exports it (captures the real download),
@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startServer } from './serve.mjs';
+import midiFile from 'midi-file';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHROME = process.env.CHROME_PATH || '/usr/bin/google-chrome';
@@ -67,9 +68,9 @@ function diff(a, b, at = '') {
   }
   return at + ': ' + JSON.stringify(a) + ' != ' + JSON.stringify(b);
 }
-async function waitDownload(before) {
+async function waitDownload(before, ext = '.json') {
   for (let i = 0; i < 50; i++) {
-    const f = fs.readdirSync(DL).filter((n) => n.endsWith('.json') && !before.includes(n));
+    const f = fs.readdirSync(DL).filter((n) => n.endsWith(ext) && !before.includes(n));
     if (f.length) return path.join(DL, f[0]);
     await sleep(100);
   }
@@ -108,6 +109,45 @@ try {
   await click('#undo-btn'); const nU = project(await gt('window.__guitarTab.library')).tracks[0].notes.length;
   await click('#redo-btn'); const nR = project(await gt('window.__guitarTab.library')).tracks[0].notes.length;
   check('undo removes the last note, redo puts it back', n0 === 4 && nU === 3 && nR === 4, `notes ${n0} -> undo ${nU} -> redo ${nR}`);
+
+  // ---------- v5 step editor (fret picker): Back/Next, bar jumps, yellow string, mini roll, undo inside ----------
+  // Grid is 1/8 here: 8 steps a bar, 2 bars. Notes at steps 0 (str 6), 2 (str 5), 4 (str 4, muted), 8 (str 1).
+  const st = async () => [await gt('window.__guitarTab.editStep()'), await gt('window.__guitarTab.playhead()')];
+  await click('.cell[data-col="3"][data-str="2"]');
+  check('picker: Back step, Next step and bar jumps are on the sheet', (await Promise.all(['#picker-prev', '#picker-next', '#picker-prev-bar', '#picker-next-bar'].map((x) => page.$eval(x, (b) => !!b.offsetWidth)))).every(Boolean));
+  const chip = await page.$eval('#picker-strings .chip.on', (b) => ({ str: b.dataset.str, bg: getComputedStyle(b).backgroundColor }));
+  check('selected string chip is yellow (#f5d547)', chip.str === '2' && chip.bg === 'rgb(245, 213, 71)', JSON.stringify(chip));
+  const roll = await page.evaluate(() => {
+    const r = document.getElementById('picker-roll'), q = (s) => [...r.querySelectorAll(s)];
+    return { cells: q('.rc').length, now: q('.rc.now').map((d) => d.dataset.col), selRow: q('.rc.sel').map((d) => d.dataset.str), selLab: q('.rl.sel').map((d) => d.textContent),
+      n2: (r.querySelector('.rc[data-col="2"][data-str="4"]') || {}).textContent, mute: (r.querySelector('.rc[data-col="4"][data-str="3"]') || {}).textContent, bar: document.getElementById('roll-bar').textContent };
+  });
+  check('mini roll: this bar x 6 strings, current step marked, notes shown', roll.cells === 48 && roll.now.length === 6 && roll.now.every((c) => c === '3') && roll.n2 === '2' && roll.mute === 'x' && /Bar 1 of 2/.test(roll.bar), JSON.stringify(roll));
+  check('mini roll: selected string row highlighted (yellow)', roll.selRow.length === 8 && roll.selRow.every((x) => x === '2') && roll.selLab.length === 1 &&
+    (await page.$eval('#picker-roll .rl.sel', (d) => getComputedStyle(d).backgroundColor)) === 'rgb(245, 213, 71)', JSON.stringify(roll.selRow));
+  const fit = await page.$eval('#picker', (s) => ({ sh: s.scrollHeight, ch: s.clientHeight, top: s.getBoundingClientRect().top, page: document.documentElement.scrollHeight - innerHeight }));
+  check('picker fits 390x844 with no scroll (sheet or page)', fit.sh <= fit.ch + 1 && fit.top >= 0 && fit.page <= 0, JSON.stringify(fit));
+  await click('#picker-prev'); const sB = await st();
+  await click('#picker-next'); await click('#picker-next'); const sN = await st();
+  check('Back step / Next step move the edit cursor and (stopped) the playhead', sB.join() === '2,2' && sN.join() === '4,4', `${sB} / ${sN}`);
+  await click('#picker-next-bar'); const sNB = await st();
+  await click('#picker-prev-bar'); const sPB = await st();
+  await click('#picker-next-bar'); await click('#picker-next'); await click('#picker-prev-bar'); const sPB2 = await st();
+  check('bar jumps: Bar » to next bar start, « Bar to this bar start, then the bar before', sNB.join() === '8,8' && sPB.join() === '0,0' && sPB2.join() === '8,8', `${sNB} / ${sPB} / ${sPB2}`);
+  const len0 = project(await gt('window.__guitarTab.library')).lengthTicks;
+  await click('#picker-next-bar'); const len1 = project(await gt('window.__guitarTab.library')).lengthTicks; const sAdd = await st();
+  await click('#picker-undo'); const len2 = project(await gt('window.__guitarTab.library')).lengthTicks;
+  check('Bar » on the last bar adds a bar; Undo in the picker takes it back', len1 === len0 + 1920 && sAdd[0] === 16 && len2 === len0, `${len0} -> ${len1} -> ${len2}, step ${sAdd}`);
+  await page.$eval('#picker-roll .rc[data-col="14"][data-str="1"]', (d) => d.click());
+  const sTap = await st(); const strTap = await page.$eval('#picker-strings .chip.on', (b) => b.dataset.str);
+  check('tapping the mini roll moves the cursor (step + string)', sTap[0] === 14 && strTap === '1', `${sTap} str ${strTap}`);
+  const cnt = async () => project(await gt('window.__guitarTab.library')).tracks[0].notes.length;
+  await click('.frow[data-fret="7"]'); const cP = await cnt();
+  const rollShows = await page.$eval('#picker-roll .rc[data-col="14"][data-str="1"]', (d) => d.textContent);
+  await click('#picker-undo'); const cU = await cnt(); await click('#picker-redo'); const cR = await cnt(); await click('#picker-undo'); const cU2 = await cnt();
+  check('placing in the picker shows in the roll; picker Undo/Redo work', cP === 5 && rollShows === '7' && cU === 4 && cR === 5 && cU2 === 4, `${cP} ${rollShows} ${cU} ${cR} ${cU2}`);
+  check('picker still open after undo/redo', !(await page.$eval('#picker', (s) => s.hidden)));
+  await click('#picker-done');
 
   // Track 2 (Open G, "Lead")
   await click('#track-add');
@@ -148,6 +188,47 @@ try {
   check('file header: schema jlr-guitar-tab v4, ppq 480, 1 project', exported.schema === 'jlr-guitar-tab' && exported.schemaVersion === 4 && exported.ppq === 480 && exported.projects.length === 1);
   const d1 = diff(comparable(original), comparable(exported.projects[0]));
   check('exported file equals the project in the app', !d1, d1);
+
+  // ---------- MIDI export through the UI: the sheet, All tracks, one track ----------
+  const ticksOf = (tr) => { let t = 0; return tr.map((e) => ({ ...e, tick: (t += e.deltaTime) })); };
+  const onsOf = (tr) => ticksOf(tr).filter((e) => e.type === 'noteOn' && e.velocity > 0);
+  await closeDrawer(); await openDrawer();
+  await click('#export-midi');
+  const sheet = await page.$$eval('#modal-actions button', (b) => b.map((x) => x.textContent));
+  check('MIDI sheet: All tracks + one row per track + Cancel', sheet.length === 5 && /^All tracks \(3\)/.test(sheet[0]) && /muted/.test(sheet[2]) && sheet[4] === 'Cancel', JSON.stringify(sheet));
+  let had2 = fs.readdirSync(DL);
+  await click('#modal-actions button[data-value="all"]');
+  const midAll = await waitDownload(had2, '.mid');
+  check('All tracks downloaded "<project>.mid"', midAll && path.basename(midAll) === 'Round trip v4.mid', midAll);
+  if (midAll) {
+    const m = midiFile.parseMidi(fs.readFileSync(midAll));
+    const names = m.tracks.map((tr) => (tr.find((e) => e.type === 'trackName') || {}).text);
+    const tempo = m.tracks[0].find((e) => e.type === 'setTempo');
+    check('All tracks .mid: Type 1, PPQ 480, conductor + 3 named tracks (muted one kept + labelled)', m.header.format === 1 && m.header.ticksPerBeat === 480 && m.tracks.length === 4 &&
+      names[0] === 'Round trip v4' && names[2] === 'Lead (muted)', JSON.stringify(names));
+    check('All tracks .mid: tempo 137 BPM, loop markers at bar 2', tempo && tempo.microsecondsPerBeat === Math.round(60e6 / 137) &&
+      JSON.stringify(ticksOf(m.tracks[0]).filter((e) => e.type === 'marker').map((e) => e.tick)) === '[1920,3840]', JSON.stringify(tempo));
+    const want = original.tracks.map((t) => t.notes.map((n) => [n.startTick, t.tuning.midi[n.string - 1] + (n.fret === null ? 0 : n.fret)]).sort((a, b) => a[0] - b[0] || a[1] - b[1]));
+    const got = m.tracks.slice(1).map((tr) => onsOf(tr).map((e) => [e.tick, e.noteNumber]).sort((a, b) => a[0] - b[0] || a[1] - b[1]));
+    check('All tracks .mid: every note at its tick and pitch (open string + fret), per track', JSON.stringify(got) === JSON.stringify(want), JSON.stringify(got) + ' vs ' + JSON.stringify(want));
+    check('All tracks .mid: channels 1-3, CC7 from volume (55, 80, 30)', m.tracks.slice(1).every((tr, i) => onsOf(tr).every((e) => e.channel === i)) &&
+      JSON.stringify(m.tracks.slice(1).map((tr) => tr.find((e) => e.type === 'controller' && e.controllerType === 7).value)) === JSON.stringify([55, 80, 30].map((v) => Math.round(v * 127 / 100))));
+    check('All tracks .mid: muted note velocity 30', onsOf(m.tracks[1]).filter((e) => e.velocity === 30).length === 1);
+  }
+  await click('#export-midi');
+  had2 = fs.readdirSync(DL);
+  const t1 = original.tracks[0];
+  await click(`#modal-actions button[data-value="${t1.id}"]`);
+  const midOne = await waitDownload(had2, '.mid');
+  check('single track downloaded "<project> - <track>.mid"', midOne && path.basename(midOne) === `Round trip v4 - ${t1.name}.mid`, midOne);
+  if (midOne) {
+    const m1 = midiFile.parseMidi(fs.readFileSync(midOne));
+    check('single track .mid: conductor + 1 track with its notes', m1.tracks.length === 2 && onsOf(m1.tracks[1]).length === t1.notes.length &&
+      (m1.tracks[1].find((e) => e.type === 'trackName') || {}).text === t1.name);
+    if (process.env.SAMPLE_DIR) { fs.copyFileSync(midAll, path.join(process.env.SAMPLE_DIR, 'ui-all.mid')); fs.copyFileSync(midOne, path.join(process.env.SAMPLE_DIR, 'ui-track1.mid')); }
+  }
+  await click('#export-midi'); await click('#modal-actions button[data-value="cancel"]');
+  check('Cancel closes the MIDI sheet', await page.$eval('#modal', (m) => m.hidden));
 
   // ---------- clear storage, reload, import ----------
   await page.evaluate(() => localStorage.clear());

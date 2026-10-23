@@ -2,7 +2,8 @@
   "name": "github-tab-tests",
   "private": true,
   "type": "module",
-  "description": "Headless browser checks for the Guitar Tab app (JSON export/import round trip).",
-  "scripts": { "test": "node roundtrip.mjs" },
-  "dependencies": { "puppeteer-core": "^23.0.0" }
+  "description": "Headless browser checks for the Guitar Tab app (JSON round trip, step editor, MIDI export) plus a Node MIDI parse test.",
+  "scripts": { "test": "node midi.mjs && node roundtrip.mjs" },
+  "dependencies": { "puppeteer-core": "^23.0.0" },
+  "devDependencies": { "midi-file": "^1.2.4" }
 }
