@@ -20,7 +20,7 @@ grep -qx 'jeremylegalrecords.com' "$SITE/CNAME" 2>/dev/null || { echo "error: $S
 rm -rf "$DEST"
 mkdir -p "$DEST"
 cd "$SRC"
-cp index.html og.png LICENSE "$DEST/"
+cp index.html og.png LICENSE NOTICE "$DEST/"
 cp -R css assets icons app "$DEST/"
 
 # 1) Landing: drop the "Now at jeremylegalrecords.com" banner (only for the old address).

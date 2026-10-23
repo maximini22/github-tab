@@ -85,7 +85,26 @@ A project holds **up to 3 tracks**, for example rhythm, lead and a bass line pla
 - The other tracks show **faint and colour-coded** in the same lanes: teal for track 1, amber for track 2 and violet for track 3. When the armed track and another track both have a note in the same cell, a small coloured dot marks the other track's note.
 - **+ Track (n/3)** adds a track. It disappears once a project has 3 tracks.
 - Rename the armed track, change its tuning or delete it from the menu (**Armed track**).
-- Each track keeps **its own tuning**. Tempo, time signature, loop and grid belong to the whole project.
+- Each track keeps **its own tuning** and **its own Sound**. Tempo, time signature, loop and grid belong to the whole project.
+
+## Sounds (v9)
+
+Each track row has a **Sound** button showing the track's instrument. Tap it for the list:
+
+| Sound | What it is | Plays | MIDI program (GM, 1-based) |
+|---|---|---|---|
+| **Nylon** (default) | FluidR3 GM nylon guitar | as written | 25 Acoustic Guitar (nylon) |
+| **Spanish nylon** | FreePats Spanish classical guitar | as written | 25 |
+| **Clean electric** | FreePats electric guitar FSBS, clean, bridge pickup | as written | 28 Electric Guitar (clean) |
+| **Upright bass** | D. Smolken double bass, pizzicato | an octave lower | 33 Acoustic Bass |
+| **Electric bass** | Karoryfer Samples Swagbass, clean | an octave lower | 34 Electric Bass (finger) |
+
+- The tab doesn't change when you pick a bass Sound: an open low E on a bass track still reads `0` on the 6th string and sounds E1 (a guitar's E2 an octave down), like a real bass. Use a guitar tuning as a bass's top four strings, or write on strings 6–3.
+- The list works with the keyboard (arrows, Enter, Escape). A change is one Undo step and is saved with the project and in its JSON file.
+- New tracks and every file from before v9 use **Nylon**.
+- **Loading:** each Sound is one small file (133–225 KB) fetched the first time a track uses it; Nylon starts loading just after the page appears. If you press Play before a Sound has arrived, the Play button shows a loading state and playback starts by itself when it's ready; press Play again to cancel. Once played, Sounds are kept in the browser and work offline.
+- **If a Sound can't load** (for example offline before it was ever used), that track plays Nylon and a short message says so. If Nylon itself can't load, a message says the guitar sound couldn't load and nothing plays; try again when you're online.
+- Every note is a real recording, repitched from the nearest sampled note. Credits and licences: [NOTICE](../NOTICE), and the **Sounds** line in the menu.
 
 ## Mixer: volume, mute, solo
 
@@ -107,7 +126,8 @@ All audible tracks play **together, in sync**. Tracks that won't be heard are di
 - **The loop brace** is set in the ruler's top lane (bar numbers). Drag across bars to set a loop range, or drag either end of the brace to change it. Setting a range switches the loop on. **Loop** in the transport toggles it on and off. In the menu, **Loop from this bar** and **Loop to this bar** set the ends at the cursor's bar.
 - With the loop off, playback stops at the end of the song and the playhead returns to the start.
 - **Metronome** (the metronome icon next to Loop, or key **M**) turns a click on and off. There is no volume control: the level is fixed at **half of what a fresh track's default volume gives**, and the track volume sliders don't change it.
-  - The sound is a short, soft, woody tick (a filtered noise burst plus a tiny sine blip, about 15 ms), made in the browser; there are no sample files.
+  - The sound is a short, soft, woody tick (a filtered noise burst plus a tiny sine blip, about 15 ms), made in the browser; it is the only synthesised sound in the app.
+  - **Metronome level (measured, v9):** `tests/v9.mjs` renders a default-volume note of every Sound and a beat-1 click through the app's real output chain (master gain and compressor) at 48 kHz and compares their K-weighted loudness over the first 100 ms. The click is 6.8 dB below Nylon (target −6 dB ±1, i.e. half). Against the v8.2 click voice the sampled Nylon was 12.3 dB louder, so the click has a fixed make-up gain (`CLICK_CAL = 2.06` in `audio.js`); its nominal level stays 0.2. The other Sounds are matched to Nylon within 1.5 dB, so the click sits at about half of any of them.
   - It clicks once per beat of the time signature (quarters in 4/4, 3/4 and 2/4; the dotted quarter in 6/8). Beat 1 is a little higher and louder.
   - It runs on the same scheduler as the notes, so it stays in time through loops, BPM changes (including holding − / +) and **Back to start**, and you can switch it on or off while playing.
   - **Count-in:** pressing Play from stopped with the click on gives one bar of clicks first.
@@ -245,6 +265,17 @@ Use this when you want to be sure an export brings everything back:
 5. **No scroll:** the page, step editor, chord grid, chord detail and a power-chord detail with its stepper row at 390×844, 390×650 and 360×640.
 6. **Metronome (v8.2):** the toggle (aria-label Metronome, off by default, no volume control), clicks on beat ticks in 4/4, 3/4 and 6/8 with the accent on beat 1, the 1-bar count-in, the level fixed at 0.5 × a fresh track's default-volume gain and unchanged by the track slider, sync with the notes through the loop, Back to start and a BPM change mid-play, no clicks when off, identical MIDI with it on or off, the JSON round trip (and older files opening with it off), and the transport fitting at 390×844, 390×650 and 360×640.
 
+`tests/v9.mjs` covers the sampled Sounds (v9):
+
+1. **Lazy loading:** no Sound file is requested before first paint and the load event; then only `nylon.json` and `nylon.mp3`.
+2. **Sound list:** 5 options, keyboard and Escape, a pick loads only that Sound, Undo/Redo, saved across a reload, left out of the v7/v4 copy, new tracks Nylon.
+3. **Bass octave:** a bass track sounds MIDI − 12 (open E → 28), Nylon as written, the tab unchanged; MIDI lanes get programs 25/33 (bytes 24/32) and bass notes an octave down.
+4. **Files:** the Sound is exported and imported (loading exactly the Sounds used), files without it and a v3 file open as Nylon.
+5. **Offline:** after one play, a reload offline plays from the `gt-tones-v1` cache with no network requests.
+6. **Waiting and fallback:** with Nylon held back, Play shows the loading state and starts by itself; Play again cancels; a failed bass Sound falls back to Nylon at tab pitch with a message; a failed Nylon shows the error and stays stopped.
+7. **Measured sound:** every sample starts within 3 ms (no leading silence) and is within 20 cents of its tuning note; rendered notes of every Sound sound within 2 ms of a metronome click scheduled the same way and within 15 cents of the tab (− 12 for bass); the metronome level; Sounds matched within 1.5 dB.
+8. **No synth left, credits (NOTICE, menu, landing), the service-worker cache name, no scroll at 390×844, 390×650 and 360×640, and (locally) first-load timing against v8.2.**
+
 `tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. For v8 it also checks schema 5 (a mixed straight + triplet project's MIDI ticks, parse-back, the v7 copy, unknown styles, newer files) and the chord data: all 30 E-standard cards give the right notes with the root in the bass, × strings skipped, chart-order codes, the 12 power cards (F#5 244, A5 577, C5 x355), 2-note versions, the fret-22 cap, the 6th↔5th pair, Drop D r-r-r power chords, the movable barre shapes, box orientation and string labels, code search, and the tuning-aware names. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
 ```sh
@@ -253,7 +284,8 @@ npm install                                   # puppeteer-core + midi-file (test
 node midi.mjs                                 # MIDI encoder, model and chord data (no browser)
 CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
 CHROME_PATH=/usr/bin/google-chrome node v8.mjs
-npm test                                      # all three
+CHROME_PATH=/usr/bin/google-chrome node v9.mjs
+npm test                                      # all four
 # against the live site instead of a local copy:
 BASE=https://jeremylegalrecords.com/guitar-tab/ node roundtrip.mjs
 ```
@@ -326,6 +358,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
       "id": "…", "name": "Rhythm",
       "tuning": { "id": "drop-d", "name": "Drop D (D A D G B E)", "midi": [64, 59, 55, 50, 45, 38] },
       "style": "plain",               // plain | dotted | triplet (this track's note style)
+      "tone": "nylon",                // v9: nylon | spanish | clean | upright | ebass (optional; missing = nylon)
       "volume": 80, "mute": false, "solo": false,
       "notes": [
         { "string": 6, "fret": 0,    "startTick": 0,    "durationTicks": 240, "techniques": [] },
@@ -341,6 +374,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 - **Notes:** `fret` is 0–22 (0–16 before v6; older files are a subset, so the schemaVersion stays 4), and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.
 - **Metronome:** `metronome` (since v8.2) is optional, so the schemaVersion stays 5: older files without it open with the click off, and v8/v8.1 ignore it. The v7 copy kept in the browser leaves it out.
+- **Sound:** a track's `tone` (since v9) is optional, so the schemaVersion stays 5: files without it, or with an unknown value, open as Nylon, and v8.x ignores it. The v7 copy kept in the browser leaves it out.
 - **Not in files:** the playhead position, which is kept per project in this browser only.
 - **Limits:** 3 tracks (larger imports keep the first 3), 999 bars, 20,000 notes per track, a 120-character title, 60-character track names and 500-character idea notes.
 
@@ -363,10 +397,10 @@ The file name is the project title (characters that file systems reject are drop
 - **One MIDI track per guitar track:**
   - **Track Name** = track name. **Instrument Name** = tuning name plus its six MIDI notes.
   - **Channel** = track number: track 1 → channel 1, 2 → 2, 3 → 3. Channel 10 (drums) is never used. A single-track file keeps the track's channel.
-  - **Program Change 25** (0-based: Acoustic Guitar (steel)), so it sounds like a guitar on a plain GM synth.
+  - **Program Change** from the track's Sound, as GM program numbers (1-based; the byte in the file is one less): Nylon and Spanish nylon **25** Acoustic Guitar (nylon), Clean electric **28** Electric Guitar (clean), Upright bass **33** Acoustic Bass, Electric bass **34** Electric Bass (finger). (v8.2 and older wrote byte 25, Steel guitar.)
   - **CC7 volume** = round(volume × 127 / 100).
 - **Notes:**
-  - Pitch = **open-string MIDI note + fret** (E standard: E2=40 A2=45 D3=50 G3=55 B3=59 E4=64).
+  - Pitch = **open-string MIDI note + fret** (E standard: E2=40 A2=45 D3=50 G3=55 B3=59 E4=64). On a bass track it's **12 lower**, as it sounds (open low E = E1 = 28); the `s6f0` text events still give the tab's string and fret.
   - Note on at `startTick` and note off at `startTick + durationTicks`. That's the gated length shown in the `len` row: until the track's next note, at most one bar.
   - Velocity 96. Chords are written low string to high.
   - Every track ends at the song's end, so loops line up.

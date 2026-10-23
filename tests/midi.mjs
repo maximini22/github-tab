@@ -1,6 +1,8 @@
 // MIDI export check (Node only, no browser): builds a 3-track sample with the app's own model + encoder,
 // parses the bytes back with the independent `midi-file` parser and checks header, tempo, time signature,
 // track names, channels, note counts, pitches, ticks and the muted / hammer-on rules, in both export modes.
+// v9: one GM program per track from its Sound (Nylon/Spanish 25, Clean electric 28, Upright 33, Electric bass 34; data
+// byte = number - 1) and bass Sounds written an octave down; the s#f# position text stays the tab's.
 // SAMPLE_DIR=/some/dir also writes sample.mid, sample-all.mid and sample-track1.mid there (and re-parses them).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -85,7 +87,7 @@ all.tracks.slice(1).forEach((tr, i) => {
   eq(got.map(x => x.on), want.map(x => x.on), `all: ${t.name} note-on ticks = startTick`);
   eq(got.map(x => x.vel), want.map(x => x.vel), `all: ${t.name} velocities (96, muted 30, legato 67)`);
   ok(got.every(x => x.ch === i), `all: ${t.name} on channel ${i + 1}`);
-  eq(tr.filter(e => e.type === 'programChange').map(e => [e.channel, e.programNumber]), [[i, 25]], `all: ${t.name} program 25 (steel guitar)`);
+  eq(tr.filter(e => e.type === 'programChange').map(e => [e.channel, e.programNumber]), [[i, 24]], `all: ${t.name} Nylon = GM program 25 (data byte 24)`);
   eq(tr.filter(e => e.type === 'controller' && e.controllerType === 7).map(e => e.value), [Math.round(t.volume * 127 / 100)], `all: ${t.name} CC7 from volume ${t.volume}`);
   eq(tr.filter(e => e.type === 'text').length, t.notes.length, `all: ${t.name} one neck-position text event per note`);
   eq(tr.filter(e => e.type === 'instrumentName').map(e => e.text)[0].startsWith(t.tuning.name.split(' (')[0]), true, `all: ${t.name} tuning as instrument name`);
@@ -282,6 +284,31 @@ for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v, i) => 
   eq([T.search(X, '244', STD).map((c) => c.name).join(), T.search(X, '577', STD).map((c) => c.name).join(), T.search(X, 'F#5', STD).map((c) => c.name).join(), T.search(X, 'a5', STD).map((c) => c.name).join(), T.search(X, 'gb5', STD).map((c) => c.name).join()],
     ['F#5,F#m', 'A5', 'F#5', 'A5', 'F#5'], 'v8.1 chords: search "244" -> F#5 (+ F#m 244222, not B5 x244), "577" -> A5, "F#5", "A5", flat alias "Gb5"');
   ok(T.search(T.expand(data, M.tuningFromId('d-standard').midi), 'dm', M.tuningFromId('d-standard').midi).some((c) => c.id === 'Em'), 'v8 chords: search uses the tuning\'s names (Dm in D standard finds the Em shape)');
+}
+
+// ---- v9: Sounds -> GM programs, bass an octave down ----
+{
+  eq([M.TONES.map(t => t.id), M.TONES.map(t => t.program)], [['nylon', 'spanish', 'clean', 'upright', 'ebass'], [25, 25, 28, 33, 34]], 'model: 5 Sounds with GM programs 25/25/28/33/34');
+  eq(M.TONES.map(t => TabMidi.PROGRAMS[t.id]), M.TONES.map(t => t.program), 'midi.js programs match the model');
+  eq(TabMidi.PROGRAM, 25, 'default program = Nylon (GM 25)');
+  eq(M.newTrack('x').tone, 'nylon', 'new track Sound = nylon');
+  const q = M.newProject('Sounds'); q.tracks = [];
+  const ids = ['nylon', 'spanish', 'clean', 'upright', 'ebass', undefined, 'kazoo'];
+  const n = (s, f, t) => ({ string: s, fret: f, startTick: t, durationTicks: 0, techniques: f === null ? ['muted'] : [] });
+  ids.slice(0, 5).forEach((id) => { const t = M.newTrack(id); t.tone = id; t.notes = [n(6, 0, 0), n(5, 3, 480), n(4, null, 960), n(1, 12, 1440)]; q.tracks.push(t); });
+  M.recompute(q);
+  const r = parse(TabMidi.build(q, { mode: 'all' }));
+  eq(r.tracks.slice(1).map(tr => tr.filter(e => e.type === 'programChange').map(e => e.programNumber)[0]), [24, 24, 27, 32, 33], 'program change bytes 24/24/27/32/33 (GM 25 Nylon, 25, 28 Clean, 33 Acoustic Bass, 34 Fingered Bass)');
+  q.tracks.forEach((t, i) => {
+    const got = notesOf(r.tracks[i + 1]).map(x => x.pitch), tab = expected(t).map(x => x.pitch), bass = t.tone === 'upright' || t.tone === 'ebass';
+    eq(got, tab.map(x => x - (bass ? 12 : 0)), `${t.tone}: pitches ${bass ? 'one octave below the tab' : '= the tab'}`);
+    eq(r.tracks[i + 1].filter(e => e.type === 'text').map(e => e.text), ['s6f0', 's5f3', 's4x', 's1f12'], `${t.tone}: s#f# text unchanged`);
+    eq(TabMidi.octaveOf(t), bass ? -12 : 0, `${t.tone}: octaveOf`);
+  });
+  const one = parse(TabMidi.build(q, { mode: q.tracks[4].id }));
+  eq(one.tracks[1].filter(e => e.type === 'programChange').map(e => [e.channel, e.programNumber]), [[4, 33]], 'single-track export: Electric bass keeps program 34 (byte 33) on its channel');
+  eq(notesOf(one.tracks[1]).map(x => x.pitch), [28, 36, 38, 64], 'single-track export: Electric bass an octave down (E1 for the open low E, E4 for 1st-string fret 12)');
+  [undefined, 'kazoo'].forEach((id) => { const t = M.newTrack('x'); if (id === undefined) delete t.tone; else t.tone = id; eq([TabMidi.programOf(t), TabMidi.octaveOf(t)], [25, 0], `tone ${id}: falls back to Nylon (25, no octave shift)`); });
 }
 
 if (process.env.SAMPLE_DIR) {

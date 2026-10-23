@@ -8,15 +8,16 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png',
-  '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.md': 'text/markdown; charset=utf-8' };
+  '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.mp3': 'audio/mpeg' };
 
-export function startServer(port = 0) {
+// root: serve another checkout instead (v9.mjs serves a v8.2 worktree to compare load times).
+export function startServer(port = 0, root = ROOT) {
   return new Promise((resolve) => {
     const srv = http.createServer((req, res) => {
       let u = decodeURIComponent(new URL(req.url, 'http://x').pathname);
       if (!u.startsWith('/github-tab/')) { res.writeHead(404); return res.end('not found'); }
-      let f = path.join(ROOT, u.slice('/github-tab/'.length));
-      if (!f.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+      let f = path.join(root, u.slice('/github-tab/'.length));
+      if (!f.startsWith(root)) { res.writeHead(403); return res.end(); }
       if (fs.existsSync(f) && fs.statSync(f).isDirectory()) {
         if (!u.endsWith('/')) { res.writeHead(301, { Location: u + '/' }); return res.end(); }
         f = path.join(f, 'index.html');

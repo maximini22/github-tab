@@ -1,4 +1,23 @@
-# Rollback to v7
+# Rollback
+
+## v9 → v8.2
+
+v9 (sampled Sounds per track) adds one optional per-track field, `tone`, and keeps schemaVersion 5. v8.2 ignores it, so
+going back loses only each track's Sound choice (everything plays the v8.2 synth pluck again). Two annotated tags mark
+v8.2:
+
+| Repo | Tag | Commit |
+|---|---|---|
+| maximini22/github-tab | `v8.2-stable` | `3fd67d9` |
+| maximini22/jeremylegalrecords.com | `guitar-tab-v8.2-stable` | `fb97602` |
+
+Use the steps under "Roll back the live JLR copy" and "Roll back the GitHub Pages copy" below with these tags in place
+of the v7 ones (`git rm -r -q guitar-tab && git checkout guitar-tab-v8.2-stable -- guitar-tab`, and
+`git rm -r -q . && git checkout v8.2-stable -- .`). The rolled-back service worker (`guitar-tab-v8-2` /
+`jlr-guitar-tab-v8-2`) deletes the v9 shell cache on activate; the Sound cache `gt-tones-v1` is left behind unused
+(about 1 MB at most) and can be cleared from the browser's site settings.
+
+## Rollback to v7
 
 v7 is the last release before per-track feel, the chord library and the share fix (v8). Two annotated tags mark it:
 

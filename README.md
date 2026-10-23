@@ -10,6 +10,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 - Up to **3 tracks** on one grid. The armed track is drawn in full and the others show faint and colour-coded.
 - **Layered playback** with mute, solo and volume per track.
+- **Five real sampled Sounds per track (v9):** Nylon (default), Spanish nylon, Clean electric, Upright bass and Electric bass. Bass Sounds play an octave below the tab. Each Sound is one small file loaded only when a track uses it, then kept for offline use.
 - **Six tunings** per track, and frets 0–22.
 - A DAW-style transport with a metronome click, a bar|beat ruler, a loop brace, and 100 undo steps.
 - Fits a phone screen with no page scroll. Only the tab grid scrolls sideways.
@@ -35,6 +36,13 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - **M** mutes a track. **S** solos it: once any track is soloed, only soloed tracks play. Mute wins over solo.
 - **Volume** goes from 0 to 100 (default 80). Changes apply live, even during playback.
 - Rename, retune or delete the armed track from **☰ → Armed track**.
+- **Sound** (the button on each track row, showing e.g. *Nylon*) picks that track's instrument: **Nylon** (default), **Spanish nylon**, **Clean electric**, **Upright bass** or **Electric bass**. Bass Sounds play the tab an octave lower (open low E sounds E1); the tab itself doesn't change. The choice is saved with the project, can be undone, and old files open as Nylon.
+
+## Sounds
+
+Every note is a recorded sample, picked from the nearest of 17 (guitars) or 10 (basses) and repitched; there is no synthesised guitar. Each Sound is one mono 64 kbit/s MP3 plus a small JSON map in `app/tones/` (Nylon 225 KB, Spanish nylon 224 KB, Clean electric 224 KB, Upright bass 165 KB, Electric bass 133 KB). Nylon starts loading just after the page has painted and loaded, the others only when a track uses them, so the first load is no heavier than v8.2. They're cached in the browser (`gt-tones-v1`) and work offline after one play. If a Sound is still loading, Play shows a small loading state and starts by itself when it's ready. If a Sound can't load, that track falls back to Nylon with a short message.
+
+Sources (details and licence text in [NOTICE](NOTICE)): Nylon from FluidR3 GM (MIT, © 2000-2002, 2008 Frank Wen; 2008 Toby Smithe); Spanish nylon and Clean electric from FreePats; Upright bass from D. Smolken's double bass; Electric bass from Karoryfer Samples' Swagbass (all CC0). How the sprites are built: [tools/tones/](tools/tones/README.md).
 
 ## Grid, BPM and tunings
 
@@ -62,7 +70,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - **Back to start** jumps to the loop start, or to bar 1 when the loop is off.
 - **Stop** keeps the position. Press it again to go back to the start.
 - **Loop** turns the loop brace on and off.
-- **Metronome** (the metronome icon, key M) turns a soft, woody MPC-style click on or off. It's on/off only: its level is fixed at half a fresh track's default volume and ignores the track sliders. It clicks on every beat of the time signature (accent on beat 1), on the same scheduler as the notes, so it stays in time through loops, BPM changes and Back to start. Pressing Play from stopped with the click on gives a 1-bar count-in. The on/off is saved with the project (`"metronome": true` in the JSON; older files open with it off) and is not part of the MIDI export.
+- **Metronome** (the metronome icon, key M) turns a soft, woody MPC-style click on or off. It's on/off only: its level is fixed (0.2, half a fresh track's default note level) and ignores the track sliders. **Measured (v9):** a beat-1 click is 6.8 dB below a default-volume Nylon note (100 ms K-weighted loudness from the onset, mean of 8 notes E2–C5), i.e. about half (−6 dB ±1). With the sampled Sounds this needed a fixed make-up gain on the click voice (`CLICK_CAL`, it was −12.3 dB before); the nominal level is still 0.2. It clicks on every beat of the time signature (accent on beat 1), on the same scheduler as the notes, so it stays in time through loops, BPM changes and Back to start. Pressing Play from stopped with the click on gives a 1-bar count-in. The on/off is saved with the project (`"metronome": true` in the JSON; older files open with it off) and is not part of the MIDI export.
 - **Keyboard:**
 
 | Key | Action |
@@ -91,18 +99,18 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Tests
 
-`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords; v8.2's low-E-left detail neck and no finger numbers), the metronome (beat ticks in 4/4, 3/4 and 6/8, the beat-1 accent, the count-in, the fixed 0.5× default-track level, sync through loops, BPM changes and Back to start, the JSON round trip and MIDI), and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords; v8.2's low-E-left detail neck and no finger numbers), the metronome (beat ticks in 4/4, 3/4 and 6/8, the beat-1 accent, the count-in, the fixed 0.5× default-track level, sync through loops, BPM changes and Back to start, the JSON round trip and MIDI), and that nothing scrolls at 390×844, 390×650 and 360×640. `v9.mjs` covers the Sounds: no Sound file is requested before first paint, the Sound list (5 options, keyboard, undo, saved), Nylon for new tracks and old files, bass an octave down with the tab unchanged, MIDI programs and octave, JSON round trip, Play waiting and starting by itself, the Nylon fallback, offline replay from the cache, every sample's onset and tuning, rendered notes on time and in tune, the metronome level, all Sounds matched in loudness, credits, no scroll at the 3 sizes, and (locally) first-load time against v8.2. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
 
 ```sh
-cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs
+cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs, v9.mjs
 ```
 
-Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `node loadbench.mjs` measures a cold first load (bytes, requests, DOMContentLoaded and load), and `node bench.mjs` times redraws and edits. To go back to v7, see [docs/ROLLBACK.md](docs/ROLLBACK.md).
+Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `node loadbench.mjs` measures a cold first load (bytes, requests, DOMContentLoaded and load), and `node bench.mjs` times redraws and edits. To go back to v8.2 (or v7), see [docs/ROLLBACK.md](docs/ROLLBACK.md).
 
 ## MIDI export
 
 - **☰ → Export MIDI (.mid)** offers **All tracks**, saved as `<project>.mid`, or one track, saved as `<project> - <track>.mid`.
-- It's a Type 1 file at PPQ 480, the same ticks as the JSON. Track 0 holds the tempo, time signature and loop markers. Each guitar track is its own named track on its own channel (1–3), with Program 25 and CC7 = volume.
+- It's a Type 1 file at PPQ 480, the same ticks as the JSON. Track 0 holds the tempo, time signature and loop markers. Each guitar track is its own named track on its own channel (1–3), with its Sound's GM program (Nylon / Spanish nylon 25, Clean electric 28, Upright bass 33, Electric bass 34) and CC7 = volume. Bass tracks are written an octave below the tab, like they sound; the `s3f7` text events still name the tab's string and fret.
 - **All tracks includes muted or unsoloed tracks.** They're labelled `(muted)` / `(not soloed)` and keep their volume.
 - Pitch = open string + fret. Each note carries a `s3f7`-style text event, so the string and fret can be rebuilt.
 - Muted notes are short at velocity 30. Hammer-on and pull-off are legato. Bends, slides and vibrato are not exported yet.
@@ -112,7 +120,7 @@ Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `no
 
 All of these are planned, with no promised dates:
 
-- **MIDI: one channel per string** mode, bends/slides/vibrato as pitch bend, guitar sound choices
+- **MIDI: one channel per string** mode, bends/slides/vibrato as pitch bend
 - **Hammer-on, pull-off, slide, bend and vibrato** in the editor (files already accept them)
 - **Let-ring / sustain**, plus palm-mute, harmonics and tapping
 - **Sliding-strip tuner mode**
@@ -131,4 +139,4 @@ The script removes the old-address banner, swaps the app's moving note, and rena
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+Code: MIT, see [LICENSE](LICENSE). Sounds: see [NOTICE](NOTICE) (FluidR3 GM, MIT; FreePats, D. Smolken and Karoryfer Samples, CC0).
