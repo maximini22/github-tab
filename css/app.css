@@ -1,0 +1,99 @@
+/* Guitar Tab layout. Theme + shared components live in jlr-theme.css. */
+.app-header .bar {
+  max-width: 960px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.save-state { font-size: .75rem; color: var(--dim); white-space: nowrap; }
+.save-state.ok { color: var(--teal); }
+
+.shell { max-width: 960px; margin: 0 auto; padding: 14px 12px calc(24px + var(--safe-b)); }
+.meta-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .meta-grid { grid-template-columns: 2fr 1fr; } }
+
+.card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.card-row .card-h { margin: 0; }
+.col-info { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hint { color: var(--muted); font-size: .82rem; margin: 4px 0 10px; }
+
+/* Editor grid: strings are rows, steps are columns. Scrolls sideways on phones. */
+.editor-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--bg-deep);
+}
+.editor { display: inline-flex; padding: 6px 6px 6px 0; min-width: 100%; }
+.labels, .col { display: flex; flex-direction: column; }
+.labels { position: sticky; left: 0; z-index: 2; background: var(--bg-deep); padding: 0 4px 0 8px; border-right: 1px solid var(--line); }
+.labels span, .labels .lh {
+  height: 46px; display: flex; align-items: center; justify-content: center;
+  font: 700 .9rem var(--mono); color: var(--teal); min-width: 30px;
+}
+.labels .lh, .col .ch { height: 22px; font-size: .65rem; color: var(--dim); font-family: var(--mono); display: flex; align-items: center; justify-content: center; }
+.col { padding: 0 2px; border-radius: 10px; }
+.col.cur { background: var(--teal-dim); box-shadow: inset 0 0 0 1px rgba(46,196,182,.55); }
+.col.cur .ch { color: var(--teal); font-weight: 700; }
+.cell {
+  position: relative; width: 44px; height: 46px; display: flex; align-items: center; justify-content: center;
+  font: 700 1rem var(--mono); color: var(--text);
+}
+.cell::before { /* the string line */
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #3a4760; z-index: 0;
+}
+.cell b {
+  position: relative; z-index: 1; min-width: 30px; height: 30px; padding: 0 4px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cell.has b { background: var(--card2); border: 1px solid var(--line); }
+.cell.mute b { color: var(--amber); }
+.cell.sel b { background: var(--neon); color: #062312; border-color: var(--neon); }
+.cell:not(.has):not(.sel) b::after { content: ""; }
+.cell:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; border-radius: 8px; }
+
+.col-tools, .file-tools, .picker-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.col-tools .btn { flex: 1 1 auto; }
+.file-tools .btn { flex: 1 1 140px; }
+
+.ascii {
+  margin: 8px 0 0; padding: 12px; overflow-x: auto; background: var(--bg-deep); border: 1px solid var(--line);
+  border-radius: 12px; font: 400 .9rem/1.45 var(--mono); color: var(--text); white-space: pre; -webkit-overflow-scrolling: touch;
+}
+
+/* Fret picker bottom sheet */
+.sheet-scrim { position: fixed; inset: 0; background: rgba(3,6,12,.6); z-index: 60; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-width: 960px; margin: 0 auto;
+  background: var(--card); border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0;
+  padding: 14px 14px calc(14px + var(--safe-b)); box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+  max-height: 92dvh; overflow-y: auto;
+}
+.sheet[hidden], .sheet-scrim[hidden], .toast[hidden] { display: none; }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.sheet-head .card-h { margin: 0 0 2px; }
+.picker-sub { display: block; font-size: .85rem; color: var(--muted); }
+.picker-strings { margin-bottom: 12px; }
+.picker-strings .chip { font-family: var(--mono); min-width: 48px; }
+
+.fretboard {
+  display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px;
+}
+@media (min-width: 760px) { .fretboard { grid-template-columns: repeat(17, minmax(0, 1fr)); } }
+.fret {
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  min-height: 64px; padding: 8px 0 6px; border-radius: 10px;
+  background: #1a2233; border: 1px solid var(--line); border-left: 3px solid #4a5568; color: var(--text);
+}
+.fret.open { border-left-color: var(--muted); background: #121a29; }
+.fret .n { font: 700 1.1rem var(--mono); }
+.fret .dots { display: flex; gap: 4px; height: 10px; align-items: center; }
+.fret .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(46,196,182,.5); }
+.fret.inlay { background: #1c2a38; }
+.fret:hover, .fret:focus-visible { border-color: var(--teal); outline: none; }
+.fret.on { background: var(--neon); color: #062312; border-color: var(--neon); }
+.fret.on .dots i { background: #062312; box-shadow: none; }
+.picker-actions .btn { flex: 1 1 110px; }
+#pick-mute.on, #pick-clear.on { border-color: var(--teal); color: var(--teal); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + var(--safe-b)); transform: translateX(-50%); z-index: 80;
+  background: var(--bg2); border: 1px solid var(--teal); color: var(--text); border-radius: 12px;
+  padding: 10px 16px; font-size: .9rem; box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100% - 32px);
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b1220">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Enter guitar tabs on your phone or desktop. Saves in your browser.">
+<title>Guitar Tab · Jeremy Legal Records</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/jlr-theme.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="bar">
+    <a class="brand" href="https://jeremylegalrecords.com/" aria-label="Jeremy Legal Records home">
+      <img class="logo-mark" src="assets/jlr-logo.png" alt="" width="107" height="160">
+      <span class="brand-title"><span class="w">JLR</span><span class="dot">•</span><span class="t">Guitar Tab</span></span>
+    </a>
+    <span class="save-state" id="save-state" aria-live="polite"></span>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="card meta">
+    <div class="meta-grid">
+      <div>
+        <label class="sec-lab" for="title">Title</label>
+        <input id="title" class="field" type="text" maxlength="120" placeholder="Untitled tab" autocomplete="off" enterkeyhint="done">
+      </div>
+      <div>
+        <label class="sec-lab" for="tuning">Tuning</label>
+        <select id="tuning" class="field"></select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-row">
+      <span class="card-h">Editor</span>
+      <span class="col-info" id="col-info"></span>
+    </div>
+    <p class="hint">Tap a string at a step to pick a fret.</p>
+    <div class="editor-wrap">
+      <div class="editor" id="editor" role="grid" aria-label="Tab editor"></div>
+    </div>
+    <div class="col-tools">
+      <button type="button" class="btn sm" id="prev-col" aria-label="Previous step">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Prev</button>
+      <button type="button" class="btn sm" id="next-col" aria-label="Next step">Next
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button type="button" class="btn sm" id="add-col">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add step</button>
+      <button type="button" class="btn sm warn" id="del-col">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>Remove step</button>
+      <button type="button" class="btn sm" id="clear-col">Clear step</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-row">
+      <span class="card-h">Tab</span>
+      <button type="button" class="btn sm" id="copy-ascii">Copy text</button>
+    </div>
+    <pre class="ascii" id="ascii" aria-label="Tab as text"></pre>
+  </section>
+
+  <section class="card">
+    <span class="card-h">File</span>
+    <div class="file-tools">
+      <button type="button" class="btn go" id="export-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Export .json</button>
+      <button type="button" class="btn" id="share-btn" hidden>Share file</button>
+      <button type="button" class="btn" id="import-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>Import .json</button>
+      <button type="button" class="btn warn" id="new-btn">New tab</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+    <p class="hint">Saves in this browser as you go. Export is your backup and the way to move a tab between devices.</p>
+  </section>
+</main>
+
+<div class="sheet-scrim" id="scrim" hidden></div>
+<section class="sheet" id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-h" hidden>
+  <div class="sheet-head">
+    <div>
+      <span class="card-h" id="picker-h">Pick a fret</span>
+      <span class="picker-sub" id="picker-sub"></span>
+    </div>
+    <button type="button" class="btn sm go" id="picker-done">Done</button>
+  </div>
+  <div class="picker-strings chips" id="picker-strings" role="radiogroup" aria-label="String"></div>
+  <div class="fretboard" id="fretboard" role="group" aria-label="Frets"></div>
+  <div class="picker-actions">
+    <button type="button" class="btn" id="pick-mute">x Muted</button>
+    <button type="button" class="btn" id="pick-clear">Clear</button>
+    <button type="button" class="btn" id="picker-next">Next step
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
