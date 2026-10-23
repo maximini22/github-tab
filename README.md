@@ -21,7 +21,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 1. Open the app and tap **Got it** on the hint.
 2. Tap a cell in a string lane, then tap a fret (0–22) or **x Muted**. Use **‹ Back step / Next step ›** and **« Bar / Bar »** to step through bars, then tap **Done**.
-3. Press **Play** (or Space). Set **BPM** with − and +.
+3. Press **Play** (or Space). Set **BPM** with − and +: tap for ±1, or hold to run faster.
 4. Add a part with **+ Track**, then tap its name to arm it and write on it.
 5. Drag across bar numbers in the ruler to loop a section.
 6. **☰ → Export project (.json)** to keep a backup, or **Export MIDI (.mid)** for a DAW.
@@ -35,9 +35,9 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Grid, BPM and tunings
 
-- **Grid** is the note value of one step: 1/1, 1/2, 1/4, 1/8 or 1/16. Changing it never moves or deletes notes.
-- **Note length** is automatic: a note lasts until the track's next note, up to one bar. The `len` row shows W, H, Q, E or S.
-- **BPM** is per project, 30–300 (default 90). **Time signature** is set in the menu: 4/4, 3/4, 2/4 or 6/8.
+- **Grid** is the note value of one step: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32 or 1/64. Next to it, the **· | 3** switch makes the step **Dotted** (1.5×) or a **Triplet** (3 in the time of 2). Tap one to turn it on and the other off. Tap the lit one again to go back to plain. So 1/8 + Triplet = 160 ticks a step, and 1/16 + Dotted = 180. Changing either never moves or deletes notes.
+- **Note length** is automatic: a note lasts until the track's next note, up to one bar. The `len` row shows W, H, Q, E, S, T (32nd) or X (64th), with `.` for dotted and `³` for triplets. Underneath, notes of an eighth or shorter get 1–4 beams (a flag when alone) grouped by beat. Triplets are marked **3**, with a bracket over quarter, half and whole triplets.
+- **BPM** is per project, 30–300 (default 90). Tap − or + for exactly 1 BPM. Hold it to repeat: after 0.4 s it steps every 250 ms, speeding up to every 36 ms by about 1.5 s, so 90 → 150 takes about 3.3 s. The whole hold is one undo step. **Time signature** is set in the menu: 4/4, 3/4, 2/4 or 6/8.
 - **Tunings:** C standard, Drop C, D standard, Drop D, E standard and Open G. Other tunings from imported files are kept as Custom (imported).
 
 ## Timeline and transport
@@ -58,6 +58,8 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 | L | Loop on/off |
 | ← → / ↑ ↓ | Move one step / move between strings |
 | Enter | Open the fret picker (type 0–22, x, or Backspace) |
+| [ / ] | Coarser / finer grid value |
+| . / T | Dotted / Triplet on or off |
 | Ctrl/⌘+Z, Shift+Ctrl/⌘+Z or Ctrl+Y | Undo / redo |
 | Esc | Close the picker or menu |
 

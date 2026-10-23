@@ -6,7 +6,7 @@ Guitar Tab is a quick way to get a guitar idea down as tab on your phone before 
 - About page: https://jeremylegalrecords.com/guitar-tab/
 - The old address, https://maximini22.github.io/github-tab/app/, still works. Saved work doesn't carry over between web addresses, so **Export** your projects at the old address and **Import** them at the new one.
 
-Contents: [The screen](#the-screen) · [Writing notes](#writing-notes) · [The step editor](#the-step-editor) · [Tracks (up to 3)](#tracks-up-to-3) · [Mixer: volume, mute, solo](#mixer-volume-mute-solo) · [Transport, ruler and loop](#transport-ruler-and-loop) · [BPM, time signature and grid](#bpm-time-signature-and-grid) · [Tunings](#tunings) · [Undo and redo](#undo-and-redo) · [Idea notes](#idea-notes) · [The menu](#the-menu) · [Saving, export and import](#saving-export-and-import) · [Checking a round trip by hand](#checking-a-round-trip-by-hand) · [Automated test](#automated-test) · [If you know a DAW](#if-you-know-a-daw) · [Keyboard](#keyboard) · [File format](#file-format-schemaversion-4) · [MIDI export](#midi-export)
+Contents: [The screen](#the-screen) · [Writing notes](#writing-notes) · [The step editor](#the-step-editor) · [Tracks (up to 3)](#tracks-up-to-3) · [Mixer: volume, mute, solo](#mixer-volume-mute-solo) · [Transport, ruler and loop](#transport-ruler-and-loop) · [BPM, time signature and grid](#bpm-time-signature-and-grid) · [The rhythm row](#the-rhythm-row) · [Tunings](#tunings) · [Undo and redo](#undo-and-redo) · [Idea notes](#idea-notes) · [The menu](#the-menu) · [Saving, export and import](#saving-export-and-import) · [Checking a round trip by hand](#checking-a-round-trip-by-hand) · [Automated test](#automated-test) · [If you know a DAW](#if-you-know-a-daw) · [Keyboard](#keyboard) · [File format](#file-format-schemaversion-4) · [MIDI export](#midi-export)
 
 ---
 
@@ -17,11 +17,11 @@ The editor is built to fit a phone screen with no page scrolling. It has been ch
 | Area | What it holds |
 |---|---|
 | Header | JLR · Guitar Tab (links to the about page), the save status, and **☰** to open the menu |
-| Transport | **Back to start**, **Play/Pause**, **Stop**, **Loop**, and **BPM** with − and + |
-| Toolbar | **Grid** (note value), **‹ ›** to move one grid step, the cursor position as `bar|beat|16th`, **Undo** and **Redo** |
+| Transport | **Back to start**, **Play/Pause**, **Stop**, **Loop**, and **BPM** with − and + (tap for ±1, hold to run) |
+| Toolbar | **Grid** (note value, 1/1 to 1/64), the **· | 3** note-style switch (Dotted, Triplet), **‹ ›** to move one grid step, the cursor position as `bar|beat|16th` (plus `+ticks` on fine grids, for example `1|2|3+40`), **Undo** and **Redo** |
 | Track strip | One row per track: colour, name, tuning, **M**, **S** and a volume slider. Tap the name to arm that track for editing. **+ Track (n/3)** appears while there's room. |
-| Ruler | Top lane: bar numbers and the loop brace. Bottom lane: beat counts (1 & 2 & …). The green playhead line runs through the ruler and the grid. |
-| Tab grid | Six string lanes, high e at the top and low string at the bottom, the way you see them when you play. A `len` row underneath shows note values. |
+| Ruler | Top lane: bar numbers and the loop brace. Bottom lane: beat counts (1 e & a 2 …, and `trip`/`let` on triplet grids). The green playhead line runs through the ruler and the grid. |
+| Tab grid | Six string lanes, high e at the top and low string at the bottom, the way you see them when you play. Underneath, the rhythm rows: `len` (note values), beams and flags, and triplet marks. See [The rhythm row](#the-rhythm-row). |
 | Idea notes | A text field pinned to the bottom. See [Idea notes](#idea-notes). |
 
 On first use, a three-line hint explains tapping, arming and looping. **Got it** hides it for good, in this browser.
@@ -32,7 +32,7 @@ On first use, a three-line hint explains tapping, arming and looping. **Got it**
 - **Tap a placed note's fret again** (open and Muted included) to remove it. Tapping a different fret replaces it.
 - **Next step ›** and **‹ Back step** move one grid step with the picker still open, so you can pencil in a whole bar without closing it. **Done** closes the picker. See [The step editor](#the-step-editor).
 - **The edit cursor** is the teal outline. It shows where the next note goes. Arrows **‹ ›** move it one grid step. While stopped, the playhead follows the cursor, so Play starts where you're working.
-- **Note length** is automatic. A note lasts until the next note on the same track starts, capped at one bar. The `len` row shows the resulting value (W, H, Q, E, S).
+- **Note length** is automatic. A note lasts until the next note on the same track starts, capped at one bar. The `len` row shows the resulting value (W, H, Q, E, S, T, X, with `.` for dotted and `³` for triplets).
 - Each string can hold one note per moment on a track. Chords are simply notes on several strings in the same step.
 - Placing a note plays it once so you can hear it.
 
@@ -47,7 +47,7 @@ The fret picker doubles as a screen you can stay on and step through whole bars:
   - **« Bar** goes to the start of this bar, or to the bar before if you're already at its start.
   - **Bar »** goes to the start of the next bar.
   - Next step and Bar » add a bar when you go past the end of the song (one undo step).
-- **Mini tab roll (top of the sheet):** the current bar on all six strings, laid out like the main grid. The armed track's frets show in full, and the other tracks show faint in their colours, so you can see what else is going on. The current step is the lit column, and your string's row is yellow. Tap any cell in the roll to jump there (step and string).
+- **Mini tab roll (top of the sheet):** the current bar on all six strings, laid out like the main grid. On fine grids (more than 16 steps in a bar, such as 1/32 and 1/64) it shows the 16-step page holding the cursor, and the caption says which steps are showing, for example `Bar 2 of 4 · step 21/64 · showing 17–32`. The armed track's frets show in full, and the other tracks show faint in their colours, so you can see what else is going on. The current step is the lit column, and your string's row is yellow. Tap any cell in the roll to jump there (step and string).
 - **↶ / ↷** in the sheet's header are Undo and Redo, so you can fix a slip without closing it.
 - While stopped, the playhead follows every move, so Play starts where you're working.
 - The sheet always fits the screen without scrolling, checked at 390×844, 390×650 and 360×640. The fret rows shrink to fit, down to a 24px minimum so they stay easy to tap. On a tall screen (390×844) all 23 frets show at once. On a shorter one, or with the browser's bars showing, only the neck scrolls inside the sheet: swipe it to reach the top or bottom frets. When the step already has a note, the neck scrolls so that fret is in view.
@@ -84,19 +84,36 @@ All audible tracks play **together, in sync**. Tracks that won't be heard are di
 
 ## BPM, time signature and grid
 
-- **BPM** is set per project, 30–300 (default 90). Type a value, or use − and +.
+- **BPM** is set per project, 30–300 (default 90). Type a value, or use − and +:
+  - **Tap** − or + to change it by exactly 1.
+  - **Hold** to keep going and speed up: the first repeat comes after 0.4 s, then steps of 1 BPM every 250 ms, each gap 20% shorter than the last, down to every 36 ms (reached about 1.5 s into the hold). 90 → 150 takes about 3.3 s. It's the same speed both ways.
+  - The tempo changes live, even while playing. Lifting your finger, sliding off the button or leaving the app stops it at once, and it stops by itself at 30 or 300.
+  - A whole hold is **one undo step**, and it saves once, when you let go.
 - **Time signature** is set per project, in the menu: 4/4, 3/4, 2/4 or 6/8. In 6/8 the beat is a dotted quarter.
-- **Grid** is the note value of one step, like a DAW's snap setting:
+- **Grid** is the note value of one step, like a DAW's snap setting. The dropdown holds the plain values 1/1, 1/2, 1/4, 1/8, 1/16, 1/32 and 1/64 (default 1/8).
+- The **note style** switch next to it, **·** (Dotted) and **3** (Triplet), changes the step: Dotted is 1.5 × the value, and Triplet is 3 in the time of 2 (⅔ of the value). Only one can be on. Tapping one turns it on and the other off, and tapping the lit one goes back to plain. The style is part of the project's grid, so it's saved, exported and undoable.
 
-| Grid | Note | Ticks (PPQ 480) | Steps in a 4/4 bar |
-|---|---|---|---|
-| 1/1 | whole | 1920 | 1 |
-| 1/2 | half | 960 | 2 |
-| 1/4 | quarter | 480 | 4 |
-| 1/8 | eighth | 240 | 8 |
-| 1/16 | sixteenth | 120 | 16 |
+| Grid | Note | Plain ticks | Dotted (·) | Triplet (3) |
+|---|---|---|---|---|
+| 1/1 | whole | 1920 | 2880 | 1280 |
+| 1/2 | half | 960 | 1440 | 640 |
+| 1/4 | quarter | 480 | 720 | 320 |
+| 1/8 | eighth | 240 | 360 | 160 |
+| 1/16 | sixteenth | 120 | 180 | 80 |
+| 1/32 | 32nd | 60 | 90 | 40 |
+| 1/64 | 64th | 30 | 45 | 20 |
 
-Changing the grid **never moves or deletes notes**. Notes keep their exact time, and the grid only changes how fine the lanes are. A note that falls between grid lines on a coarse grid still shows in its cell. Switch to a finer grid to edit it exactly. Older files with dotted or triplet grids are opened on the nearest plain value (dotted → the same value, triplet → the next finer value), and the notes stay where they were.
+Ticks are at PPQ 480. Steps restart at every barline, so a step that doesn't divide the bar evenly ends with a shorter one (for example 1/4 dotted in 4/4 gives 720 + 720 + 480). The ruler and toolbar show the grid as `1/8`, `1/8.` or `1/8T`. Plain 1/64 has 64 steps in a 4/4 bar and 1/64 triplet has 96. The tab grid scrolls sideways and keeps its readable column width, and the step editor's roll pages through the bar 16 steps at a time.
+
+Changing the grid **never moves or deletes notes**. Notes keep their exact time, and the grid only changes how fine the lanes are. A note that falls between grid lines on a coarse grid still shows in its cell. Switch to a finer grid to edit it exactly. Older (v3) files with dotted or triplet grids open with the same value and style. A tuplet other than a triplet (for example 5:4) opens as the plain value, and a grid that was both dotted and triplet opens as the triplet. Both of those are listed in the import summary, and the notes stay where they were.
+
+## The rhythm row
+
+Under the six string lanes, three thin rows show the rhythm of the armed track. They're worked out from the note spacing, like the `len` row:
+
+- **`len`:** the note value: W (whole), H (half), Q (quarter), E (eighth), S (16th), T (32nd) or X (64th). A dot is added for dotted values (`E.`) and `³` for triplets (`E³`). `~` marks a length with no single name.
+- **Stems and beams:** eighths and shorter get 1, 2, 3 or 4 beams (eighth, 16th, 32nd, 64th), beamed together within a beat. A lone one gets flags. Dotted values show a dot after the stem. Whole notes have no stem.
+- **Triplets:** notes of one triplet group are marked **3**. Beamed triplets (eighth and shorter) show just the number. Quarter, half and whole triplets get a bracket with the 3 in the middle.
 
 ## Tunings
 
@@ -147,7 +164,7 @@ The pinned field at the bottom ("Idea notes…") is a short scratchpad of up to 
 - If anything had to change on the way in, a summary lists it. For example:
   - a project with more than 3 tracks keeps its first 3
   - a tuning shows as Custom (imported)
-  - a dotted or triplet grid becomes a plain value
+  - a 5:4 (or other non-triplet) tuplet grid becomes a plain value
   - tracks with mixed time signatures now share one
 - To move to another device, export on one, then import with Merge on the other.
 - Files from older versions (schemaVersion 1–3) open fine. A library saved by an older version in this browser is upgraded the first time v4 opens, and a one-off backup copy is kept under `jlr-guitar-tab:library-v3-backup` (or `-v2-`/`-v1-`).
@@ -177,9 +194,11 @@ Use this when you want to be sure an export brings everything back:
 6. Checks the 3-track import limit, Custom (imported) tunings, grid migration and a real v3 export (`tests/fixtures/v3-project.json`).
 7. Step editor: **‹ Back step** / **Next step ›** / bar jumps move the cursor and playhead, the selected string is yellow on the chip and in the mini roll, the roll shows the bar's notes and jumps on tap, the sheet fits 390×844 without scrolling, and Undo/Redo work inside it.
 8. Frets 0–22: the neck has 23 rows with the right dots (none at 15), fret 22 is placed, plays, and shows in the roll and text tab. The picker fits at 390×844 with no scrolling, and at 390×650 and 360×640 only the neck scrolls and the lit fret is kept in view. Fret 22 survives the JSON round trip and exports as the right MIDI pitch.
-9. MIDI: opens the export sheet, downloads **All tracks** and a single track, and parses both files back (tracks, names, tempo, loop markers, every note's tick and pitch, channels, CC7, muted velocity).
+9. v7 grids: the dropdown holds exactly the 7 plain values; every value × style (21 grids) gives the right step size, label and saved grid; the toggles are exclusive and undoable; [ ] . T work; notes never move when the grid changes; 8th triplets (beamed, "3"), quarter triplets (bracket), 32nds (3 beams) and 64ths (4 beams) in the rhythm row; triplet playback timing; step editor and the 16-step roll window at 1/64; the JSON round trip of a triplet and a dotted grid; and no page scroll with the toolbar on one row at 390×844, 390×650 and 360×640.
+10. BPM hold: a tap is ±1; holding + runs 90 → 150 in under 5 s with gaps that only shrink; letting go or sliding off stops it at once; it clamps at 30 and 300; nothing saves during the hold and it saves once on release; one Undo reverts the whole hold; and the tempo changes live while playing.
+11. MIDI: opens the export sheet, downloads **All tracks** and a single track, and parses both files back (tracks, names, tempo, loop markers, every note's tick and pitch, channels, CC7, muted velocity).
 
-`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, and frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23). `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
+`tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
 ```sh
 cd tests
@@ -200,7 +219,7 @@ It prints one PASS/FAIL line per check and exits non-zero on any failure. `node 
 | Tempo field | **BPM** with − and + (per project) |
 | Bar ruler, playhead, cycle/loop brace | Ruler: bar numbers and the loop brace on top, beats below. Drag to set the loop, tap or drag to move the playhead. |
 | Track headers: record-arm/select, mute, solo, fader | Track strip: tap a name to **arm**, **M**, **S**, volume slider |
-| Snap / quantize value | **Grid**: 1/1, 1/2, 1/4, 1/8, 1/16 |
+| Snap / quantize value | **Grid**: 1/1 … 1/64, plus **·** Dotted / **3** Triplet |
 | Piano roll (pitch rows × time) | Tab grid (string lanes × time). Tap to add, tap the same fret to remove. |
 | Other tracks shown faint in the editor | Non-armed tracks drawn faint, colour-coded |
 | Insert / delete time | **+ Insert step** / **− Delete step** (all tracks) |
@@ -222,6 +241,9 @@ When a keyboard is attached:
 | ← → | Move one grid step |
 | ↑ ↓ | Move between strings |
 | Enter | Open the fret picker at the cursor |
+| [ / ] | Coarser / finer grid value (keeps the style) |
+| . | Dotted on/off |
+| T | Triplet on/off |
 | Ctrl/⌘+Z | Undo |
 | Shift+Ctrl/⌘+Z or Ctrl+Y | Redo |
 | Esc | Close the picker or menu |
@@ -243,7 +265,8 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
   "projects": [{
     "id": "…", "title": "Night drive riff",
     "bpm": 112,
-    "grid": { "value": "eighth" },   // whole | half | quarter | eighth | sixteenth
+    "grid": { "value": "eighth" },   // whole | half | quarter | eighth | sixteenth | thirtysecond | sixtyfourth
+                                      // + "dotted": true, or + "tuplet": { "actual": 3, "normal": 2 } (triplet)
     "timeSignature": [4, 4],
     "lengthTicks": 3840,              // whole bars
     "loop": { "enabled": true, "startMeasure": 1, "endMeasure": 2 },   // bars from 1, end included
@@ -262,6 +285,7 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 }
 ```
 
+- **Grid:** `{ "value" }` alone is plain. Dotted adds `"dotted": true`, and Triplet adds `"tuplet": { "actual": 3, "normal": 2 }` (never both). 1/32, 1/64 and the styles were added in v7 as a superset, so the schemaVersion stays 4. An older v4–v6 app opens a dotted or triplet grid on a plain value and says so. It refuses a file whose grid is 1/32 or 1/64 ("unknown note length"), so reload an old tab to update it first.
 - **Strings:** `string` runs from 1 (high) to 6 (low). `tuning.midi` lists the open strings in that order. Each is a MIDI note from 0 to 105, so even fret 22 stays inside MIDI's 0–127 range. **Pitch = `tuning.midi[string − 1] + fret`.**
 - **Notes:** `fret` is 0–22 (0–16 before v6; older files are a subset, so the schemaVersion stays 4), and `null` means muted, which always carries `"muted"`. `durationTicks` is worked out again on every change, so it doesn't need to be set on import. One note per string per `startTick` per track.
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.

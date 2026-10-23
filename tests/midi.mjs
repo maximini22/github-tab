@@ -153,6 +153,59 @@ eq(M.MAX_FRET, 22, 'model allows frets 0-22');
 }
 
 // ---- samples ----
+
+// ---- v7: grid value x style (plain / dotted / triplet), naming, migration, triplet MIDI ticks ----
+const TICKS = { plain: [1920, 960, 480, 240, 120, 60, 30], dotted: [2880, 1440, 720, 360, 180, 90, 45], triplet: [1280, 640, 320, 160, 80, 40, 20] };
+const FR = ['1/1', '1/2', '1/4', '1/8', '1/16', '1/32', '1/64'];
+eq([...M.DUR_VALUES], ['whole', 'half', 'quarter', 'eighth', 'sixteenth', 'thirtysecond', 'sixtyfourth'], 'v7: grid values 1/1 .. 1/64');
+for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v, i) => {
+  const g = M.makeGrid(v, st), lab = FR[i] + (st === 'dotted' ? '.' : st === 'triplet' ? 'T' : '');
+  const q = M.recompute(M.newProject('g')); const cl = M.cells(q, g);
+  const step = Math.min(TICKS[st][i], 1920);
+  ok(M.durTicks(g) === TICKS[st][i] && M.gridLabel(g) === lab && M.gridStyle(g) === st && cl[0].len === step && (cl.length < 2 || cl[1].start === step),
+    `v7 grid ${lab} = ${TICKS[st][i]} ticks per step (${M.gridName(g)})`);
+});
+{ // steps restart at every barline (1/4. in 4/4: 720, 720, 480), and all 21 lengths name back to themselves
+  const q = M.newProject('b'); q.lengthTicks = 3840; M.recompute(q);
+  eq(M.cells(q, M.makeGrid('quarter', 'dotted')).map((c) => [c.start, c.len]), [[0, 720], [720, 720], [1440, 480], [1920, 720], [2640, 720], [3360, 480]], 'v7: 1/4. steps restart at the barline');
+  eq(M.cells(q, M.makeGrid('sixtyfourth', 'triplet')).length, 192, 'v7: 1/64T = 96 steps a bar (2 bars = 192)');
+  const all = []; for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v) => all.push(M.makeGrid(v, st)));
+  ok(all.every((g) => JSON.stringify(M.nameTicks(M.durTicks(g))) === JSON.stringify(g)) && new Set(all.map(M.durTicks)).size === 21, 'v7: all 21 value x style lengths are distinct and named back (rhythm row)');
+  eq(['E³', 'S.', 'T', 'X', 'X³', 'X.'], [M.nameTicks(160), M.nameTicks(180), M.nameTicks(60), M.nameTicks(30), M.nameTicks(20), M.nameTicks(45)].map(M.durLabel), 'v7: labels E³ S. T X X³ X.');
+}
+{ // migration: v3 dotted/triplet grids kept as value + style; odd tuplets and dotted triplets reported; v4 files unchanged
+  const V3 = JSON.parse(fs.readFileSync(path.join(HERE, 'fixtures', 'v3-project.json'), 'utf8'));
+  const base = (v, grid) => {
+    if (v === 3) { const f = JSON.parse(JSON.stringify(V3)); f.projects[0].grid = grid; f.projects[0].tracks[0].notes[0].startTick = 160; return f; }
+    const q = M.newProject('m'); q.grid = grid; q.tracks[0].notes = [{ string: 1, fret: 3, startTick: 160, durationTicks: 0, techniques: [] }];
+    return { schema: 'jlr-guitar-tab', schemaVersion: v, kind: 'project', ppq: 480, projects: [JSON.parse(JSON.stringify(q))] }; };
+  const r1 = M.parseFile(base(3, { value: 'eighth', dotted: true, tuplet: null }));
+  eq([r1.projects[0].grid, r1.warnings.length], [{ value: 'eighth', dotted: true }, 0], 'v7 migration: v3 dotted 1/8 kept as 1/8 + Dotted, no warning');
+  const r2 = M.parseFile(base(3, { value: 'sixteenth', dotted: false, tuplet: { actual: 3, normal: 2 } }));
+  eq([r2.projects[0].grid, r2.warnings.length, r2.projects[0].tracks[0].notes[0].startTick], [{ value: 'sixteenth', tuplet: { actual: 3, normal: 2 } }, 0, 160], 'v7 migration: v3 1/16 triplet kept as 1/16 + Triplet, notes unmoved');
+  const r3 = M.parseFile(base(3, { value: 'quarter', tuplet: { actual: 5, normal: 4 } }));
+  ok(JSON.stringify(r3.projects[0].grid) === '{"value":"quarter"}' && r3.warnings.length === 1 && /5:4 tuplet is now 1\/4/.test(r3.warnings[0]), 'v7 migration: v3 5:4 tuplet -> plain 1/4 with a warning: ' + r3.warnings[0]);
+  const r4 = M.parseFile(base(3, { value: 'eighth', dotted: true, tuplet: { actual: 3, normal: 2 } }));
+  ok(JSON.stringify(r4.projects[0].grid) === JSON.stringify({ value: 'eighth', tuplet: { actual: 3, normal: 2 } }) && r4.warnings.length === 1, 'v7 migration: dotted triplet keeps the triplet, with a warning');
+  const r5 = M.parseFile(base(4, { value: 'sixteenth' }));
+  eq([r5.projects[0].grid, r5.warnings.length, r5.migratedFrom || null], [{ value: 'sixteenth' }, 0, null], 'v7: a v4-v6 file (plain grid) loads unchanged');
+  for (const g of [M.makeGrid('sixtyfourth', 'dotted'), M.makeGrid('eighth', 'triplet'), M.makeGrid('thirtysecond', 'plain')]) {
+    const r = M.parseFile(JSON.parse(JSON.stringify(base(4, g))));
+    eq([r.projects[0].grid, r.warnings.length], [g, 0], `v7: JSON round trip keeps grid ${M.gridLabel(g)}`);
+  }
+  eq(M.SCHEMA_VERSION, 4, 'v7: schema stays v4 (new grids are a superset)');
+}
+{ // note length gating and MIDI ticks with triplet / 64th notes
+  const q = M.newProject('Triplets'); q.bpm = 120;
+  const n = (s, f, t) => ({ string: s, fret: f, startTick: t, durationTicks: 0, techniques: [] });
+  q.tracks[0].notes = [n(1, 0, 0), n(1, 2, 160), n(1, 3, 320), n(2, 5, 480), n(2, 7, 800), n(2, 8, 1120), n(3, 1, 1440), n(3, 2, 1460), n(3, 3, 1480), n(4, 4, 1500), n(4, 5, 1545), n(4, 6, 1590)];
+  M.recompute(q);
+  eq(q.tracks[0].notes.map((x) => x.durationTicks), [160, 160, 160, 320, 320, 320, 20, 20, 20, 45, 45, 1920], 'v7: note lengths gate to the next note (8th triplets 160, quarter triplets 320, 64T 20, 64. 45; the last capped at one bar)');
+  const r = parse(TabMidi.build(q, { mode: 'all' })), got = notesOf(r.tracks[1]).map((x) => [x.on, x.off - x.on]);
+  eq(got, q.tracks[0].notes.map((x) => [x.startTick, x.durationTicks]), 'v7 MIDI: triplet / 64T / dotted-64th notes land on exact ticks with exact lengths');
+  ok(r.header.ticksPerBeat === 480 && got.slice(0, 3).every((x, i) => x[0] === i * 160), 'v7 MIDI: 8th triplets at 0, 160, 320 (PPQ 480)');
+}
+
 if (process.env.SAMPLE_DIR) {
   const dir = process.env.SAMPLE_DIR; fs.mkdirSync(dir, { recursive: true });
   const files = { 'sample.mid': allBytes, 'sample-all.mid': allBytes, 'sample-track1.mid': TabMidi.build(p, { mode: p.tracks[0].id }) };
