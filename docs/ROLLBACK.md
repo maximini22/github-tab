@@ -10,6 +10,13 @@ v7 is the last release before per-track feel, the chord library and the share fi
 A zip of the built v7 `guitar-tab/` folder (as published on jeremylegalrecords.com) is kept at
 `/workspace/github-tab-rollback/guitar-tab-v7.zip`.
 
+## v8.1 → v8
+
+v8.1 (movable power and barre chords, chart-order boxes) changes only the chord library and its tests; saved tabs and
+files are unchanged (still schemaVersion 5), so going back to v8 loses nothing. The v8 release is github-tab `72c4661`
+and site `7649724`: use the steps below with those commits in place of the v7 tags
+(`git checkout 7649724 -- guitar-tab`).
+
 ## Roll back the live JLR copy (jeremylegalrecords.com/guitar-tab/)
 
 Only `guitar-tab/` changes. Never touch `CNAME` or anything else in the site repo.

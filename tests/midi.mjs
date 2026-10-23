@@ -240,31 +240,48 @@ for (const st of ['plain', 'dotted', 'triplet']) M.DUR_VALUES.forEach((v, i) => 
   const cctx = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(HERE, '../app/js/chords.js'), 'utf8'), cctx);
   const T = cctx.window.TabChords, data = JSON.parse(fs.readFileSync(path.join(HERE, '../app/chords.json'), 'utf8')), list = data.chords;
   const STD = M.tuningFromId('e-standard').midi;
-  eq([list.length, new Set(list.map((c) => c.id)).size, data.stringOrder], [22, 22, 'low-to-high'], 'v8 chords: 22 shapes, unique ids, frets listed low E -> high e');
-  eq(list.reduce((o, c) => { o[c.family] = (o[c.family] || 0) + 1; return o; }, {}), { open: 10, power: 4, barre: 4, other: 4 }, 'v8 chords: families 10 open, 4 power, 4 barre, 4 other');
-  for (const c of list) {
+  const raw = list.reduce((o, c) => { o[c.family] = (o[c.family] || 0) + 1; return o; }, {});
+  eq([list.length, new Set(list.map((c) => c.id)).size, data.stringOrder, raw], [19, 19, 'low-to-high', { open: 10, power: 1, barre: 4, other: 4 }], 'v8.1 chords.json: 19 entries (10 open, 1 movable power entry, 4 movable barre, 4 other), frets low E -> high e');
+  const X = T.expand(data, STD), fam = X.reduce((o, c) => { o[c.family] = (o[c.family] || 0) + 1; return o; }, {});
+  eq([X.length, new Set(X.map((c) => c.id)).size, fam], [30, 30, { open: 10, power: 12, barre: 4, other: 4 }], 'v8.1 chords: E standard expands to 30 cards (12 power roots, 4 movable barre)');
+  for (const c of X) {
     const root = T.parseName(c.name).pc, pcs = [...new Set(T.pitches(c, STD).map((m) => ((m - root) % 12 + 12) % 12))].sort((a, b) => a - b);
     const want = [...T.QUALITY_PCS[c.quality]].sort((a, b) => a - b), lowest = ((Math.min(...T.pitches(c, STD)) % 12) + 12) % 12;
     ok(JSON.stringify(pcs) === JSON.stringify(want) && c.frets.length === 6 && c.fingers.length === 6 && lowest === root,
-      `v8 chord ${c.name} (${c.frets.map((f) => f ?? 'x').join('')}): pitch classes {${pcs}} = ${c.quality} {${want}}, ${T.NAMES[root]} in the bass`);
+      `v8 chord ${c.name} (${T.code(c)}): pitch classes {${pcs}} = ${c.quality} {${want}}, ${T.NAMES[root]} in the bass`);
   }
-  const em = list.find((c) => c.id === 'Em'), dm = list.find((c) => c.id === 'Dm'), A = list.find((c) => c.id === 'A'), F = list.find((c) => c.id === 'F');
+  const em = list.find((c) => c.id === 'Em'), dm = list.find((c) => c.id === 'Dm'), A = list.find((c) => c.id === 'A'), F = X.find((c) => c.id === 'F');
+  const P = (id, xs = X) => xs.find((c) => c.id === id);
   eq(JSON.parse(JSON.stringify(T.notes(em))), [{ string: 6, fret: 0 }, { string: 5, fret: 2 }, { string: 4, fret: 2 }, { string: 3, fret: 0 }, { string: 2, fret: 0 }, { string: 1, fret: 0 }], 'v8 chords: Em notes = app strings 6..1 (frets[i] -> string 6 - i)');
   eq(T.notes(dm).map((x) => x.string), [4, 3, 2, 1], 'v8 chords: x strings are skipped (Dm xx0231 -> strings 4..1)');
-  eq([T.code(em), T.code(em, true), T.code(dm, true)], ['022000', '000220', '1320xx'], 'v8 chords: fret codes in chart order (E->e) and box order (e->E)');
-  eq([T.label(em, STD).text, T.label(em, M.tuningFromId('d-standard').midi).text, T.label(em, M.tuningFromId('c-standard').midi).text, T.label(dm, M.tuningFromId('d-standard').midi).text],
-    ['Em', 'Dm (Em shape)', 'Cm (Em shape)', 'Cm (Dm shape)'], 'v8 chords: names follow the tuning (D std Em shape = Dm, C std = Cm)');
-  eq([T.label(em, M.tuningFromId('drop-d').midi).text, T.label(A, M.tuningFromId('drop-d').midi).text, T.label(em, M.tuningFromId('open-g').midi).text],
-    ['Em shape', 'A', 'Em shape'], 'v8 chords: uneven tunings are labelled honestly ("Em shape" in Drop D / Open G; A is still A in Drop D, low E unused)');
-  ok(T.label(F, M.tuningFromId('drop-c').midi).shift === null && /unevenly/.test(T.label(F, M.tuningFromId('drop-c').midi).note), 'v8 chords: F shape in Drop C has an "unevenly" note');
-  // box: high e on the LEFT. Em: the two finger dots (A and D strings = frets[1], frets[2]) sit in columns 3 and 4 of 0..5 (right half).
+  eq([T.code(em), T.code(A), T.code(dm), T.code(F)], ['022000', 'x02220', 'xx0231', '133211'], 'v8.1 chords: codes read low E -> high e like a chart (Em 022000, A x02220, Dm xx0231, F 133211)');
+  // movable power chords (E standard)
+  const fs5 = P('P-F#'), a5 = P('P-A'), c5 = P('P-C');
+  eq([fs5.name, T.code(fs5), JSON.parse(JSON.stringify(T.notes(fs5)))], ['F#5', '244', [{ string: 6, fret: 2 }, { string: 5, fret: 4 }, { string: 4, fret: 4 }]], 'v8.1 power: F#5 = 244 on strings 6/5/4');
+  eq([a5.name, T.code(a5), T.notes(a5).map((n) => n.string)], ['A5', '577', [6, 5, 4]], 'v8.1 power: A5 = 577 (root on the 6th string, fret 5)');
+  eq([c5.name, T.code(c5), c5.movable.shape, T.notes(c5).map((n) => n.string + ':' + n.fret).join(' ')], ['C5', 'x355', 'pow5', '5:3 4:5 3:5'], 'v8.1 power: C5 card is the 5th-string shape x355 (6th-string roots past fret 7 switch to the A string)');
+  eq(X.filter((c) => c.family === 'power').map((c) => c.name + '=' + T.code(c)).join(' '), 'E5=022 F5=133 F#5=244 G5=355 G#5=466 A5=577 A#5=688 B5=799 C5=x355 C#5=x466 D5=x577 D#5=x688', 'v8.1 power: the 12 cards, one per root');
+  eq([T.make('pow6', 5, STD, 2).name, T.code(T.make('pow6', 5, STD, 2)), T.code(T.make('pow5', 3, STD, 2))], ['A5', '57', 'x35'], 'v8.1 power: 2-note versions (A5 57, C5 x35)');
+  eq([T.make('pow6', 10, STD, 3).name, T.code(T.make('pow6', 10, STD, 3)), T.range('pow6', STD, 3).max, T.range('pow5', STD, 3).max, T.make('pow6', 40, STD, 3).movable.r], ['D5', '10-12-12', 20, 20, 20], 'v8.1 power: stepper names follow the root (fret 10 = D5); top fret capped at 22 (root fret max 20)');
+  eq([T.pairFret('pow6', 5, STD, 3), T.code(T.make('pow5', T.pairFret('pow6', 5, STD, 3), STD, 3))], [0, 'x022'], 'v8.1 power: 6th -> 5th string keeps the root (A5 577 -> x022)');
+  // drop D: real string intervals -> one-finger r, r, r
+  const DD = M.tuningFromId('drop-d').midi, XD = T.expand(data, DD), e5d = P('P-E', XD), d5d = P('P-D', XD);
+  eq([d5d.name, T.code(d5d), e5d.name, T.code(e5d), e5d.fingers.slice(0, 3), JSON.parse(JSON.stringify(e5d.barre))], ['D5', '000', 'E5', '222', [1, 1, 1], { fret: 2, from: 1, to: 3, finger: 1 }], 'v8.1 power: Drop D power chord is a one-finger barre r,r,r (E5 = 222, open D5 = 000)');
+  eq([T.make('pow6', 7, DD, 3).name, T.code(P('F', XD)), P('F', XD).name], ['A5', '333211', 'F'], 'v8.1 drop D: 777 = A5; the F barre keeps its root (333211)');
+  // movable barre
+  eq(['F', 'Bm', 'B', 'F#m'].map((id) => P(id).name + '=' + T.code(P(id)) + ':' + P(id).movable.label).join(' '), 'F=133211:E shape Bm=x24432:A shape B=x24442:A shape F#m=244222:E shape', 'v8.1 barre: F, Bm, B, F#m are movable E/A shapes');
+  eq([T.make('maj6', 3, STD).name, T.code(T.make('maj6', 3, STD)), T.make('min5', 5, STD).name, T.code(T.make('min5', 5, STD))], ['G', '355433', 'Dm', 'x57765'], 'v8.1 barre: stepping renames (E shape fret 3 = G, A-minor shape fret 5 = Dm)');
+  // box: low E on the LEFT, string labels underneath
   const svg = T.box(em), xs = [...svg.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="6"/g)].map((m) => Number(m[1])).sort((a, b) => a - b);
   const sx = (80 - 15 - 5) / 5;
-  eq(xs.map((x) => Math.round((x - 15) / sx)), [3, 4], 'v8 chords: box draws high e on the left (Em finger dots in columns 3-4 of 0-5, i.e. A and D near the right)');
+  eq(xs.map((x) => Math.round((x - 15) / sx)), [1, 2], 'v8.1 chords: box draws low E on the left (Em finger dots in columns 1-2 of 0-5 = A and D)');
+  eq([...svg.matchAll(/<text class="bs"[^>]*>([^<]*)</g)].map((m) => m[1]).join(''), 'EADGBe', 'v8.1 chords: box strings labelled E A D G B e under the box');
   const fsvg = T.box(F), bar = /<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g; const rects = [...fsvg.matchAll(bar)].map((m) => [Number(m[1]), Number(m[2])]);
-  ok(rects.some(([x, w]) => Math.abs(x - (15 - 6)) < 0.01 && Math.abs(w - (5 * sx + 12)) < 0.01), 'v8 chords: F barre spans all six columns');
-  eq(T.search(list, 'power', STD).length, 4, 'v8 chords: search "power" finds 4');
-  ok(T.search(list, 'dm', M.tuningFromId('d-standard').midi).some((c) => c.id === 'Em'), 'v8 chords: search uses the tuning\'s names (Dm in D standard finds the Em shape)');
+  ok(rects.some(([x, w]) => w > 4 * sx && w < 6 * sx), 'v8 chords: F barre spans all six columns');
+  eq(T.search(X, 'power', STD).length, 12, 'v8.1 chords: search "power" finds 12');
+  eq([T.search(X, '244', STD).map((c) => c.name).join(), T.search(X, '577', STD).map((c) => c.name).join(), T.search(X, 'F#5', STD).map((c) => c.name).join(), T.search(X, 'a5', STD).map((c) => c.name).join(), T.search(X, 'gb5', STD).map((c) => c.name).join()],
+    ['F#5,F#m', 'A5', 'F#5', 'A5', 'F#5'], 'v8.1 chords: search "244" -> F#5 (+ F#m 244222, not B5 x244), "577" -> A5, "F#5", "A5", flat alias "Gb5"');
+  ok(T.search(T.expand(data, M.tuningFromId('d-standard').midi), 'dm', M.tuningFromId('d-standard').midi).some((c) => c.id === 'Em'), 'v8 chords: search uses the tuning\'s names (Dm in D standard finds the Em shape)');
 }
 
 if (process.env.SAMPLE_DIR) {

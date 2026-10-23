@@ -1,6 +1,7 @@
 // v8 browser checks: Share fallbacks (mocked navigator.share / canShare / clipboard), per-track note style
 // (badges, cells, cursor, undo, mixed straight + triplet round trip, playback timing), the chord library
-// (grid, search, detail preview, drop / undo / arp / replace / skip-x) and no-scroll fits at 390x844, 390x650, 360x640.
+// (grid, search, detail preview, drop / undo / arp / replace / skip-x), v8.1 movable power / barre chords (stepper,
+// 6th/5th toggle, 2 notes, drop D r-r-r, search by fret code, chart-order codes) and no-scroll fits at 390x844, 390x650, 360x640.
 //
 //   cd tests && node v8.mjs                                   (local server)
 //   BASE=https://maximini22.github.io/github-tab/ node v8.mjs (live)
@@ -227,28 +228,33 @@ try {
   await page.waitForSelector('#chords:not([hidden]) .ccard');
   const g = await page.evaluate(() => ({ cards: document.querySelectorAll('#chords .ccard').length, chips: [...document.querySelectorAll('#chords-fam .chip')].map((c) => c.textContent.replace(/\s+/g, ' ').trim()),
     heads: [...document.querySelectorAll('#chords .cgh .sec-lab')].map((e) => e.textContent), sub: document.getElementById('chords-sub').textContent, foot: document.getElementById('chords-foot').textContent }));
-  check('chords: library opens from the step editor with 22 chord boxes in 4 groups', g.cards === 22 && g.heads.join() === 'Open chords,Power chords,Barre chords,Other', JSON.stringify(g.heads));
-  check('chords: family chips with counts (All 22, Open 10, Power 4, Barre 4, Other 4)', g.chips.join('|') === 'All 22|Open 10|Power 4|Barre 4|Other 4', g.chips.join('|'));
-  check('chords: header says track, tuning, bar and step; foot says the boxes are drawn high e on the left', /Guitar 1 · E std · Bar 1 · step 5\/8/.test(g.sub) && /high e on the left/.test(g.foot), g.sub + ' / ' + g.foot);
+  check('chords: library opens from the step editor with 30 chord boxes in 4 groups', g.cards === 30 && g.heads.join() === 'Open chords,Power chords,Barre chords,Other', JSON.stringify(g.heads));
+  check('chords: family chips with counts (All 30, Open 10, Power 12, Barre 4, Other 4)', g.chips.join('|') === 'All 30|Open 10|Power 12|Barre 4|Other 4', g.chips.join('|'));
+  check('chords: header says track, tuning, bar and step; foot says boxes and codes read low E → high e and shapes slide with ‹ fret ›', /Guitar 1 · E std · Bar 1 · step 5\/8/.test(g.sub) && /low E → high e/.test(g.foot) && /‹ fret ›/.test(g.foot), g.sub + ' / ' + g.foot);
   await page.type('#chords-q', 'power');
-  check('chords: search "power" shows the 4 power chords', (await page.$$eval('#chords .ccard', (a) => a.map((c) => c.dataset.id))).join() === 'E5,A5,D5,G5');
+  const pw = await page.$$eval('#chords .ccard', (a) => a.map((c) => c.dataset.id));
+  check('chords: search "power" shows the 12 power chords, one per root (E5 first)', pw.join() === 'P-E,P-F,P-F#,P-G,P-G#,P-A,P-A#,P-B,P-C,P-C#,P-D,P-D#', pw.join());
   await page.$eval('#chords-q', (e) => { e.value = ''; e.dispatchEvent(new Event('input')); });
   await click('#chords-fam .chip[data-fam="barre"]');
   check('chords: Barre chip filters to F, Bm, B, F#m', (await page.$$eval('#chords .ccard', (a) => a.map((c) => c.dataset.id))).join() === 'F,Bm,B,F#m');
   await click('#chords-fam .chip[data-fam="all"]');
-  // box orientation: Em's finger dots are in the right half (A + D strings), high e column on the left
-  const emDots = await page.$eval('#chords .ccard[data-id="Em"] svg', (s) => [...s.querySelectorAll('circle[r="6"]')].map((c) => Number(c.getAttribute('cx'))));
-  check('chords: Em box has its dots at x>=51 (A, D strings: right side, high e on the left)', emDots.length === 2 && emDots.every((x) => x >= 51), JSON.stringify(emDots));
+  // box orientation (v8.1): like a chart, low E on the left. Em's finger dots (A + D strings) sit left of centre; strings labelled
+  const emBox = await page.$eval('#chords .ccard[data-id="Em"]', (c) => ({ dots: [...c.querySelectorAll('svg circle[r="6"]')].map((e) => Number(e.getAttribute('cx'))), labs: [...c.querySelectorAll('svg text.bs')].map((t) => t.textContent).join(''), code: c.querySelector('.cf').textContent, aria: c.getAttribute('aria-label') }));
+  check('chords: Em box has low E on the left (A/D dots at x<=40) and strings labelled E A D G B e', emBox.dots.length === 2 && emBox.dots.every((x) => x <= 40) && emBox.labs === 'EADGBe', JSON.stringify(emBox));
+  const codes = await page.$$eval('#chords .ccard', (a) => Object.fromEntries(a.map((c) => [c.dataset.id, c.querySelector('.cf').textContent])));
+  check('chords: card codes read low → high with no "e" prefix (Em 022000, A x02220, F 133211, F#5 244, A5 577, C5 x355)', codes.Em === '022000' && codes.A === 'x02220' && codes.F === '133211' && codes['P-F#'] === '244' && codes['P-A'] === '577' && codes['P-C'] === 'x355', JSON.stringify(codes));
   await fitAll('grid');
   await click('#chords .ccard[data-id="Em"]');
   const d = await page.evaluate(() => ({ name: document.getElementById('cd-name').textContent, info: document.getElementById('cd-info').textContent, pv: [...document.querySelectorAll('#cd-roll .rc.pv b')].map((b) => b.textContent),
     pvCols: [...new Set([...document.querySelectorAll('#cd-roll .rc.pv')].map((e) => e.parentNode && [...e.parentNode.children].indexOf(e) % 9))],
     marks: [...document.querySelectorAll('#cd-neck .mk')].map((m) => (m.classList.contains('o') ? 'o' : m.classList.contains('x') ? 'x' : '') + ':' + m.textContent + '@' + [...m.classList].find((k) => /^k\d$/.test(k))),
     chips: [...document.querySelectorAll('#cd-chips .chip')].map((c) => c.textContent), str: document.getElementById('cd-str').textContent, cap: document.getElementById('cd-cap').textContent }));
-  check('chords detail: Em, with both fret orders (e→E 000220, E→e 022000)', d.name === 'Em' && /e→E 000220/.test(d.info) && /E→e 022000/.test(d.info), d.info);
+  check('chords detail: Em, code 022000 labelled "low E → high e"', d.name === 'Em' && /022000/.test(d.info) && /low E → high e/.test(d.info) && !/000220/.test(d.info), d.info);
   check('chords detail: preview roll shows the six notes stacked at the cursor step (high e 0 … low E 0)', d.pv.join('') === '000220' && /Strum · 6 notes/.test(d.cap), JSON.stringify(d));
   check('chords detail: neck marks open strings (rings) and fingers 2 + 3 on the A/D columns (right side)', d.marks.filter((m) => m.startsWith('o')).length === 4 && d.marks.includes(':2@k4') && d.marks.includes(':3@k3'), JSON.stringify(d.marks));
-  check('chords detail: neck header and shape chips run high e first', d.str.replace(/\s/g, '') === 'freteBGDAE' && d.chips[0].startsWith('e') && d.chips[5].startsWith('E') && /fret 2 · finger 2/.test(d.chips[4]), d.str + ' ' + JSON.stringify(d.chips));
+  const cap2 = await page.$eval('.cneck-cap', (e) => e.textContent);
+  check('chords detail: string chips run low E first (like the chart); the neck stays the app neck (high e left) and says so', d.str.replace(/\s/g, '') === 'freteBGDAE' && /high e on the left/.test(cap2) && d.chips[0].startsWith('E') && d.chips[5].startsWith('e') && /fret 2 · finger 2/.test(d.chips[1]), d.str + ' ' + cap2 + ' ' + JSON.stringify(d.chips));
+  check('chords detail: open shapes have no fret stepper', await page.$eval('#cd-move', (e) => e.hidden));
   await fitAll('detail');
   // drop (strum): 6 notes at the cursor step on the armed track, replacing high e 7 and low E 9, one undo step
   const h0 = await gt('window.__guitarTab.history()');
@@ -311,6 +317,93 @@ try {
   check('chords: Escape goes detail -> grid -> closed (step editor stays open)', e1.open && !e1.detail && !e2.chords && e2.picker, JSON.stringify([e1, e2]));
   await click('#picker-done');
 
+  // ================= 3b. v8.1 movable power + barre chords =================
+  await fresh();
+  const chs = () => gt('window.__guitarTab.chords()');
+  const atTick = async (t, tr = 0) => (await proj()).tracks[tr].notes.filter((n) => n.startTick === t).map((n) => n.string + ':' + n.fret).sort().join(' ');
+  await openCell(0, 0); await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard');
+  await click('#chords-fam .chip[data-fam="power"]'); await sleep(100);
+  await shot('v81-power-grid.png');
+  await click('#chords-fam .chip[data-fam="all"]');
+  await page.type('#chords-q', '244');
+  const s244 = await page.$$eval('#chords .ccard', (a) => a.map((c) => c.dataset.id));
+  check('power: search "244" finds F#5 (and F#m 244222), not B5 (x244)', s244.includes('P-F#') && !s244.includes('P-B') && s244.length <= 2, s244.join());
+  await click('#chords .ccard[data-id="P-F#"]');
+  let c = await chs();
+  check('power: F#5 card = 244, fingers 1-3-4, on strings 6/5/4', c.cur.name === 'F#5' && c.cur.code === '244' && c.cur.notes.map((n) => n.string + ':' + n.fret).join(' ') === '6:2 5:4 4:4' && c.cur.fingers.slice(0, 3).join('') === '134', JSON.stringify(c.cur));
+  await click('#cd-drop');
+  check('power drop: F#5 writes 6:2 5:4 4:4 at the step, toast "F#5 added"', (await atTick(0)) === '4:4 5:4 6:2' && /F#5 added/.test(await toastText()), await atTick(0));
+  await click('#picker-undo');
+  check('power drop: one undo removes it', (await proj()).tracks[0].notes.length === 0);
+  for (const q of ['577', 'A5']) {
+    await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard');
+    await page.$eval('#chords-q', (e, v) => { e.value = v; e.dispatchEvent(new Event('input')); }, q);
+    const ids = await page.$$eval('#chords .ccard', (a) => a.map((x) => x.dataset.id));
+    check(`power: search "${q}" finds A5`, ids[0] === 'P-A' && !ids.includes('P-D'), ids.join());
+    await page.keyboard.press('Escape');
+  }
+  await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard');
+  await page.$eval('#chords-q', (e) => { e.value = ''; e.dispatchEvent(new Event('input')); });
+  await click('#chords-fam .chip[data-fam="power"]');
+  await click('#chords .ccard[data-id="P-A"]'); await sleep(100);
+  const ui = await page.evaluate(() => ({ mv: !document.getElementById('cd-move').hidden, fret: document.getElementById('cd-fret').textContent, info: document.getElementById('cd-info').textContent, s6: document.getElementById('cd-s6').getAttribute('aria-pressed'), n3: document.getElementById('cd-n3').getAttribute('aria-pressed'), name: document.getElementById('cd-name').textContent }));
+  check('power stepper: A5 detail shows 577, "fret 5", 6th string and 3 notes selected', ui.mv && ui.name === 'A5' && /577/.test(ui.info) && ui.fret === 'fret 5' && ui.s6 === 'true' && ui.n3 === 'true', JSON.stringify(ui));
+  await shot('v81-power-stepper.png');
+  await click('#cd-up'); await click('#cd-up'); c = await chs();
+  check('power stepper: › twice from A5 = B5 799, the B5 card is highlighted', c.cur.name === 'B5' && c.cur.code === '799' && c.sel === 'P-B' && (await page.$eval('#cd-fret', (e) => e.textContent)) === 'fret 7', JSON.stringify(c));
+  for (let i = 0; i < 3; i++) await click('#cd-up');
+  c = await chs();
+  check('power stepper: two-digit frets read 10-12-12 (D5)', c.cur.name === 'D5' && c.cur.code === '10-12-12', c.cur.code);
+  for (let i = 0; i < 20; i++) { if (await page.$eval('#cd-up', (b) => b.disabled)) break; await click('#cd-up'); }
+  c = await chs();
+  check('power stepper: stops at the top (root fret 20, top fret 22)', c.mv.r === 20 && Math.max(...c.cur.frets.filter((f) => f !== null)) === 22 && (await page.$eval('#cd-up', (b) => b.disabled)), JSON.stringify(c.mv) + ' ' + c.cur.code);
+  check('power stepper: high positions fit (neck shows 0 then a window round the shape)', (await fits('#chords')).sh <= (await fits('#chords')).ch + 1 && (await page.$$eval('#cd-neck .frow.gap', (a) => a.length)) === 1);
+  for (let i = 0; i < 25; i++) { if (await page.$eval('#cd-down', (b) => b.disabled)) break; await click('#cd-down'); }
+  c = await chs();
+  check('power stepper: stops at the bottom (E5 open, 022)', c.mv.r === 0 && c.cur.name === 'E5' && c.cur.code === '022' && (await page.$eval('#cd-down', (b) => b.disabled)), c.cur.code);
+  for (let i = 0; i < 5; i++) await click('#cd-up');
+  await click('#cd-s5'); c = await chs();
+  check('power 6th/5th toggle: A5 moves to the A string and keeps its root (x022)', c.mv.shape === 'pow5' && c.cur.name === 'A5' && c.cur.code === 'x022', JSON.stringify(c.cur));
+  await click('#cd-up'); await click('#cd-up'); await click('#cd-up'); c = await chs();
+  check('power 5th string: fret 3 = C5 x355 on strings 5/4/3', c.cur.name === 'C5' && c.cur.code === 'x355' && c.cur.notes.map((n) => n.string + ':' + n.fret).join(' ') === '5:3 4:5 3:5', JSON.stringify(c.cur));
+  await click('#cd-s6'); c = await chs();
+  check('power 6th/5th toggle back: C5 on the 6th string = 8-10-10', c.cur.name === 'C5' && c.cur.code === '8-10-10' && c.mv.shape === 'pow6', c.cur.code);
+  await click('#cd-n2'); c = await chs();
+  check('power 2 notes (1·5): C5 = 8-10, root + 5th only', c.mv.n === 2 && c.cur.code === '8-10' && c.cur.notes.length === 2, c.cur.code);
+  await click('#cd-drop');
+  check('power drop: 2-note C5 writes 6:8 5:10', (await atTick(0)) === '5:10 6:8', await atTick(0));
+  await click('#picker-undo');
+  // C5 card itself (5th string)
+  await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard'); await click('#chords .ccard[data-id="P-C"]'); c = await chs();
+  check('power: C5 card is the A-string shape x355, 3 notes again', c.cur.code === 'x355' && c.mv.shape === 'pow5' && c.mv.n === 3 && (await page.$eval('#cd-s5', (b) => b.getAttribute('aria-pressed'))) === 'true', JSON.stringify(c.mv));
+  await click('#cd-drop');
+  check('power drop: C5 x355 writes 5:3 4:5 3:5 (low E left alone)', (await atTick(0)) === '3:5 4:5 5:3', await atTick(0));
+  await click('#picker-undo');
+  // movable barre: F (E shape) -> stepper -> A shape
+  await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard'); await click('#chords-fam .chip[data-fam="barre"]'); await click('#chords .ccard[data-id="F"]'); c = await chs();
+  const bl = await page.evaluate(() => [document.getElementById('cd-s6').textContent, document.getElementById('cd-s5').textContent, document.getElementById('cd-ns').hidden]);
+  check('barre: F is movable (E shape / A shape toggle, no note-count toggle)', c.cur.code === '133211' && bl.join() === 'E shape,A shape,true' && JSON.stringify(c.cur.barre).includes('"fret":1'), JSON.stringify([c.cur, bl]));
+  await click('#cd-up'); await click('#cd-up'); c = await chs();
+  check('barre stepper: E shape fret 3 = G 355433', c.cur.name === 'G' && c.cur.code === '355433', c.cur.code);
+  await click('#cd-s5'); c = await chs();
+  check('barre toggle: A shape keeps G (x-10-12-12-12-10)', c.cur.name === 'G' && c.cur.code === 'x-10-12-12-12-10', c.cur.code);
+  await click('#cd-drop');
+  check('barre drop: G A-shape writes 5 notes from the A string', (await atTick(0)) === '1:10 2:12 3:12 4:12 5:10', await atTick(0));
+  await click('#picker-undo'); await click('#picker-done');
+  // drop D track: the power chord is a one-finger barre r, r, r
+  await click('#track-add'); await arm(1);
+  await openDrawer(); await select('#tuning', 'drop-d'); await closeDrawer();
+  await openCell(0, 0); await click('#chords-open'); await page.waitForSelector('#chords:not([hidden]) .ccard'); await click('#chords-fam .chip[data-fam="all"]');
+  const dd = await page.$eval('#chords .ccard[data-id="P-E"]', (x) => ({ n: x.querySelector('.cn').textContent, f: x.querySelector('.cf').textContent, labs: [...x.querySelectorAll('svg text.bs')].map((t) => t.textContent).join('') }));
+  check('drop D: power cards follow the real strings (E5 = 222, box strings D A D G B e)', dd.n === 'E5' && dd.f === '222' && dd.labs === 'DADGBe', JSON.stringify(dd));
+  await click('#chords .ccard[data-id="P-E"]'); c = await chs();
+  check('drop D: E5 is a one-finger barre (fingers 1-1-1, barre at fret 2)', c.cur.fingers.slice(0, 3).join('') === '111' && c.cur.barre && c.cur.barre.fret === 2, JSON.stringify(c.cur));
+  await click('#cd-up'); await click('#cd-up'); await click('#cd-up'); c = await chs();
+  check('drop D stepper: fret 5 = G5 555', c.cur.name === 'G5' && c.cur.code === '555', c.cur.code);
+  await click('#cd-drop');
+  check('drop D drop: G5 lands on track 2 strings 6/5/4 at fret 5, track 1 untouched', (await atTick(0, 1)) === '4:5 5:5 6:5' && (await proj()).tracks[0].notes.length === 0, await atTick(0, 1));
+  await click('#picker-done');
+
   // ================= 4. No scroll at three sizes =================
   for (const [w, h] of [[390, 844], [390, 650], [360, 640]]) {
     await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); await sleep(250);
@@ -328,6 +421,12 @@ try {
     check(`fit ${w}x${h}: page, step editor, chord grid and chord detail all fit with no scroll`, pg.y <= 0 && pg.x <= 0 && pk.sh <= pk.ch + 1 && cg.sh <= cg.ch + 1 && cd.sh <= cd.ch + 1 && cg.top >= 0 && cd.top >= 0 && cdx.dropIn && !cdx.bad.length && cdx.rows >= 6 && cdx.fr >= 16,
       JSON.stringify({ pg, pk, cg, cd, cdx }));
     console.log(`     ${w}x${h}: picker ${pk.sh}/${pk.ch}, grid ${cg.sh}/${cg.ch} (list scrolls inside: ${cgIn}), detail ${cd.sh}/${cd.ch}, neck ${cdx.rows} rows x ${cdx.fr}px${cdx.nolist ? ', list band hidden' : ''}`);
+    await page.keyboard.press('Escape');
+    await click('#chords .ccard[data-id="P-A"]'); await sleep(100);
+    const pd = await fits('#chords');
+    const pdx = await page.evaluate(() => { const bad = []; document.querySelectorAll('#cd-move .btn, #cd-fret, .cside .btn').forEach((e) => { const r = e.getBoundingClientRect(); if (e.scrollWidth > e.clientWidth + 1 || r.right > innerWidth || r.left < 0) bad.push(e.id || e.className); });
+      return { bad, dropIn: document.getElementById('cd-drop').getBoundingClientRect().bottom <= innerHeight, row: Math.round(document.getElementById('cd-move').getBoundingClientRect().height) }; });
+    check(`fit ${w}x${h}: power detail with the 6th/5th + ‹ fret › + 1·5·8 row fits, nothing clipped`, pd.sh <= pd.ch + 1 && pd.page <= 0 && pd.pageX <= 0 && pdx.dropIn && !pdx.bad.length && pdx.row <= 44, JSON.stringify({ pd, pdx }));
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await click('#picker-done');
   }
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

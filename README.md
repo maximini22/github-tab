@@ -17,7 +17,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - **MIDI export (.mid):** all tracks in one Type 1 file (one lane per track), or one track on its own.
 - **Step editor:** the fret picker has Back/Next step, bar jumps, a yellow highlight on the selected string and a mini tab roll of the bar.
 - **Per-track feel:** each track has its own note style (plain, Dotted or Triplet), so a straight rhythm part and a triplet lead can share one project.
-- **Chord library:** 22 common shapes (open, power, barre and more) as chord boxes. Preview one on the neck and in the bar, then **Drop into measure** as a strum or an arpeggio. One Undo takes it back.
+- **Chord library:** 30 chord boxes: open chords, all 12 power chords (244, 577, x355…) and movable barre chords you slide up the neck with a fret stepper. Preview one on the neck and in the bar, then **Drop into measure** as a strum or an arpeggio. One Undo takes it back.
 - **Share project** sends the project to another app, or falls back to copying the tab as text or saving the file.
 
 ## Quick start
@@ -45,10 +45,13 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Chord library
 
-- In the step editor (tap a cell), tap **Chords**. Search by name (`Em`, `F#m`, `power`, `sus`) or filter with the **Open / Power / Barre / Other** chips.
+- In the step editor (tap a cell), tap **Chords**. Search by name (`Em`, `F#5`, `A5`, `power`, `sus`), by fret code (`244`, `577`, `x355`), or filter with the **Open / Power / Barre / Other** chips.
 - Tap a chord to preview it: it's drawn on the neck and stacked in the bar's mini roll at the cursor step, and you hear it.
 - Choose **Strum ↓** (all notes on one step) or **Arp** (one note per grid step, low string first), then **Drop into measure**. Notes already on those strings at that step are replaced, muted (x) strings are left alone, and an arpeggio that runs past the end adds a bar. It's one undo step, and the toast has an **Undo** button.
-- **Chord boxes are drawn like the app's neck: high e on the left, low E on the right** (most chord books draw them the other way round). Names follow the armed track's tuning: in D standard the Em shape is labelled Dm (Em shape); on an uneven tuning like Drop D it's just "Em shape".
+- **Boxes and fret codes read like a chord chart: low E on the left, low → high** (Em = `022000`, A = `x02220`, F#5 = `244`), with the strings labelled under each box. The big neck in the detail view is the app's own neck (high e on the left) and is captioned so.
+- **Power chords are movable:** 12 cards, one per root (6th-string shape up to fret 7: E5 `022` … F#5 `244` … A5 `577` … B5 `799`; then the 5th-string shape: C5 `x355` … D#5 `x688`). In the detail view, **6th / 5th** picks the root string, **‹ fret ›** slides the shape (the name follows the root; top fret 22), and **1·5·8 / 1·5** picks 3 notes or 2. In Drop D / Drop C the 6th-string shape is the one-finger barre (E5 = `222`).
+- **Barre chords are movable too:** F, Bm, B and F#m have the same ‹ fret › stepper and an **E shape / A shape** toggle (F → fret 3 = G `355433`).
+- Names of the open shapes follow the armed track's tuning: in D standard the Em shape is labelled Dm (Em shape); on an uneven tuning like Drop D it's just "Em shape". Movable shapes are always named from their real root.
 
 ## Timeline and transport
 
@@ -87,7 +90,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 
 ## Tests
 
-`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel and the chord library, and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords), and that nothing scrolls at 390×844, 390×650 and 360×640. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
 
 ```sh
 cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs
@@ -112,7 +115,7 @@ All of these are planned, with no promised dates:
 - **Hammer-on, pull-off, slide, bend and vibrato** in the editor (files already accept them)
 - **Let-ring / sustain**, plus palm-mute, harmonics and tapping
 - **Sliding-strip tuner mode**
-- **More chords** (more 7ths, add9 and voicings up the neck, custom shapes) and a chord-name row above the tab
+- **More chords** (more 7ths, add9, movable 7th/sus shapes, custom shapes) and a chord-name row above the tab
 - **Koala export**
 
 ## Publishing (maintainers)
