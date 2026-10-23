@@ -1,10 +1,12 @@
 /* Minimal offline cache for the app shell. Bump VERSION when shell files change. */
-var VERSION = 'guitar-tab-v1';
+var VERSION = 'guitar-tab-v2';
 var SHELL = [
   './',
   './index.html',
   './css/jlr-theme.css',
   './css/app.css',
+  './js/audio.js',
+  './js/model.js',
   './js/app.js',
   './manifest.webmanifest',
   './assets/jlr-logo.png',
