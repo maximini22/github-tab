@@ -2,8 +2,9 @@
 
 Guitar Tab is a quick way to get a guitar idea down as tab on your phone before it's gone. It runs in the browser. There's no account and no subscription, and nothing is sent anywhere: your work stays in this browser until you export it.
 
-- Open the app: https://maximini22.github.io/github-tab/app/
-- About page: https://maximini22.github.io/github-tab/
+- Open the app: https://jeremylegalrecords.com/guitar-tab/app/
+- About page: https://jeremylegalrecords.com/guitar-tab/
+- The old address, https://maximini22.github.io/github-tab/app/, still works. Saved work doesn't carry over between web addresses, so **Export** your projects at the old address and **Import** them at the new one.
 
 Contents: [The screen](#the-screen) · [Writing notes](#writing-notes) · [Tracks (up to 3)](#tracks-up-to-3) · [Mixer: volume, mute, solo](#mixer-volume-mute-solo) · [Transport, ruler and loop](#transport-ruler-and-loop) · [BPM, time signature and grid](#bpm-time-signature-and-grid) · [Tunings](#tunings) · [Undo and redo](#undo-and-redo) · [Idea notes](#idea-notes) · [The menu](#the-menu) · [Saving, export and import](#saving-export-and-import) · [Checking a round trip by hand](#checking-a-round-trip-by-hand) · [Automated test](#automated-test) · [If you know a DAW](#if-you-know-a-daw) · [Keyboard](#keyboard) · [File format](#file-format-schemaversion-4) · [MIDI export plan](#midi-export-plan)
 
@@ -121,6 +122,7 @@ The pinned field at the bottom ("Idea notes…") is a short scratchpad of up to 
 ## Saving, export and import
 
 - Everything **saves automatically in this browser**, on this device and at this web address. Clearing the browser's site data deletes it, so **export is your real backup**.
+- **Moving from the old address?** Saved work doesn't carry over between web addresses (maximini22.github.io/github-tab and jeremylegalrecords.com/guitar-tab are separate to the browser). Export all at the old one, then Import at the new one.
 - **Export project (.json)** saves the current project as a `.json` file. **Export all (.json)** saves the whole library. On a phone the file goes to your Downloads, and from there you can keep it in your files or cloud drive or send it to yourself. **Share project** hands the file straight to another app where the browser supports it.
 - **Import (.json)** checks the file first, then asks how to bring it in:
   - **Merge** keeps everything you have and adds the file's projects. An identical copy of a project you already have is skipped, and a changed copy is added as "(imported)".
@@ -162,7 +164,7 @@ cd tests
 npm install                                   # puppeteer-core only; uses your installed Chrome
 CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
 # against the live site instead of a local copy:
-BASE=https://maximini22.github.io/github-tab/ node roundtrip.mjs
+BASE=https://jeremylegalrecords.com/guitar-tab/ node roundtrip.mjs
 ```
 
 It prints one PASS/FAIL line per check and exits non-zero on any failure. `node tests/serve.mjs` serves the repo locally at `http://127.0.0.1:8080/github-tab/` if you want to click around.

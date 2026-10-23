@@ -214,3 +214,7 @@ footer a:hover{color:var(--text)}
 .float.f1 i{background:var(--teal)}
 .float.f2 i{background:var(--amber)}
 footer .links a{margin-left:1rem}
+/* old-address banner (github.io copy only; scripts/publish-to-jlr.sh removes it) */
+.moved{margin:0;padding:.7rem 1.25rem;text-align:center;font-size:.92rem;line-height:1.45;color:var(--muted);background:var(--teal-dim);border-bottom:1px solid rgba(46,196,182,.35)}
+.moved a{display:block;color:var(--teal);font-weight:700;text-decoration:none}
+.moved a:hover{text-decoration:underline}
