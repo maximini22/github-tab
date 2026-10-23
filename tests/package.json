@@ -2,8 +2,8 @@
   "name": "github-tab-tests",
   "private": true,
   "type": "module",
-  "description": "Headless browser checks for the Guitar Tab app (JSON round trip, step editor, MIDI export, v8 share fallbacks, per-track feel, chord library with movable power/barre chords, v9 sampled Sounds: lazy loading, per-track tone, bass octave, offline replay, measured onset/pitch/metronome level) plus a Node MIDI parse test.",
-  "scripts": { "test": "node midi.mjs && node roundtrip.mjs && node v8.mjs && node v9.mjs" },
+  "description": "Headless browser checks for the Guitar Tab app (JSON round trip, step editor, MIDI export, v8 share fallbacks, per-track feel, chord library with movable power/barre chords, v9 sampled Sounds: lazy loading, per-track tone, bass octave, offline replay, measured onset/pitch/metronome level, v9.1 lyrics sheet: headers, chips, quick labels, Restart hand-off, rollback restore) plus a Node MIDI parse test.",
+  "scripts": { "test": "node midi.mjs && node roundtrip.mjs && node v8.mjs && node v9.mjs && node v91.mjs" },
   "dependencies": { "puppeteer-core": "^23.0.0" },
   "devDependencies": { "midi-file": "^1.2.4" }
 }

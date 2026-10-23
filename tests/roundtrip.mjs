@@ -189,7 +189,8 @@ try {
   await armTrack(0);
   await click('.cell[data-col="8"][data-str="0"]'); await click('#picker-done');
   await openDrawer(); await click('#loop-start'); await closeDrawer();
-  await page.type('#idea', 'riff idea: answer phrase in bar 2');
+  // v9.1: the notes field lives in the lyrics sheet (the footer box opens it)
+  await click('#idea-open'); await page.type('#idea', 'riff idea: answer phrase in bar 2'); await click('#lyr-done');
   await select('#grid-select', 'sixteenth');
 
   const original = project(await gt('window.__guitarTab.library'));

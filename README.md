@@ -19,6 +19,7 @@ Catch a guitar idea as tab on your phone before it's gone. It's free, you don't 
 - **Step editor:** the fret picker has Back/Next step, bar jumps, a yellow highlight on the selected string and a mini tab roll of the bar.
 - **Per-track feel:** each track has its own note style (plain, Dotted or Triplet), so a straight rhythm part and a triplet lead can share one project.
 - **Chord library:** 30 chord boxes: open chords, all 12 power chords (244, 577, x355…) and movable barre chords you slide up the neck with a fret stepper. Preview one on the neck and in the bar, then **Drop into measure** as a strum or an arpeggio. One Undo takes it back.
+- **Lyrics sheet (v9.1):** tap the notes box at the bottom to open a full-height lyrics sheet (up to 5000 characters, saved as you type). A line that is just `[Verse]`, `[Chorus]`, `[Bridge 2]`… is a section header: it's drawn bold and becomes a chip at the top that jumps to it. Quick buttons add Verse, Pre-chorus, Chorus, Bridge, Hook, Intro and Outro. The song keeps playing while you write, and a big **Restart** in the sheet's mini transport snaps straight back to the loop's first downbeat (bar 1 with the loop off).
 - **Share project** sends the project to another app, or falls back to copying the tab as text or saving the file.
 
 ## Quick start
@@ -68,6 +69,7 @@ Sources (details and licence text in [NOTICE](NOTICE)): Nylon from FluidR3 GM (M
   - The bottom lane shows beats. Tap or drag it to move the green playhead, even while playing.
 - **Play/Pause** starts from the playhead, or from the loop start when the playhead is outside the loop.
 - **Back to start** jumps to the loop start, or to bar 1 when the loop is off.
+- **Restart (v9.1, lyrics sheet, key R or Home):** while playing it re-starts the loop at its first downbeat (bar 1 with the loop off) inside the audio scheduler, 40 ms ahead: notes queued from the old pass are cancelled, notes still sounding fade out in a few ms, and the first note and the beat-1 click land on the same sample, so nothing doubles or hangs. Stopped, it just moves the playhead there.
 - **Stop** keeps the position. Press it again to go back to the start.
 - **Loop** turns the loop brace on and off.
 - **Metronome** (the metronome icon, key M) turns a soft, woody MPC-style click on or off. It's on/off only: its level is fixed (0.2, half a fresh track's default note level) and ignores the track sliders. **Measured (v9):** a beat-1 click is 6.8 dB below a default-volume Nylon note (100 ms K-weighted loudness from the onset, mean of 8 notes E2–C5), i.e. about half (−6 dB ±1). With the sampled Sounds this needed a fixed make-up gain on the click voice (`CLICK_CAL`, it was −12.3 dB before); the nominal level is still 0.2. It clicks on every beat of the time signature (accent on beat 1), on the same scheduler as the notes, so it stays in time through loops, BPM changes and Back to start. Pressing Play from stopped with the click on gives a 1-bar count-in. The on/off is saved with the project (`"metronome": true` in the JSON; older files open with it off) and is not part of the MIDI export.
@@ -76,14 +78,14 @@ Sources (details and licence text in [NOTICE](NOTICE)): Nylon from FluidR3 GM (M
 | Key | Action |
 |---|---|
 | Space | Play / pause |
-| Home | Back to start |
+| Home or R | Back to start (while playing: Restart at the loop's first downbeat) |
 | L | Loop on/off |
 | ← → / ↑ ↓ | Move one step / move between strings |
 | Enter | Open the fret picker (type 0–22, x, or Backspace) |
 | [ / ] | Coarser / finer grid value |
 | . / T | Dotted / Triplet on or off (armed track) |
 | Ctrl/⌘+Z, Shift+Ctrl/⌘+Z or Ctrl+Y | Undo / redo |
-| Esc | Close the chord library, picker or menu |
+| Esc | Close the lyrics sheet, chord library, picker or menu |
 
 ## Saving and loading
 
@@ -95,17 +97,18 @@ Sources (details and licence text in [NOTICE](NOTICE)): Nylon from FluidR3 GM (M
   - **Replace** swaps your whole library for the file, after a confirm.
 - **Moving between devices or addresses** (for example from maximini22.github.io/github-tab to jeremylegalrecords.com/guitar-tab): Export all on the old one, then Import with Merge on the new one.
 - Older files (schemaVersion 1–4) open fine: an older project's note style is given to every track. A file from a newer version is refused with a message to reload the app.
+- **Lyrics** are the project's notes field (`idea`), so they're in the JSON, Import and Share with their line breaks. A text share puts them under the tab. They're not in the MIDI file.
 - **☰ → Export MIDI (.mid):** see [MIDI export](#midi-export).
 
 ## Tests
 
-`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords; v8.2's low-E-left detail neck and no finger numbers), the metronome (beat ticks in 4/4, 3/4 and 6/8, the beat-1 accent, the count-in, the fixed 0.5× default-track level, sync through loops, BPM changes and Back to start, the JSON round trip and MIDI), and that nothing scrolls at 390×844, 390×650 and 360×640. `v9.mjs` covers the Sounds: no Sound file is requested before first paint, the Sound list (5 options, keyboard, undo, saved), Nylon for new tracks and old files, bass an octave down with the tab unchanged, MIDI programs and octave, JSON round trip, Play waiting and starting by itself, the Nylon fallback, offline replay from the cache, every sample's onset and tuning, rendered notes on time and in tune, the metronome level, all Sounds matched in loudness, credits, no scroll at the 3 sizes, and (locally) first-load time against v8.2. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
+`roundtrip.mjs` builds a project through the real UI in headless Chrome. It exports, clears, re-imports, deep-compares and plays it, checks the step editor, and downloads and parses both MIDI exports. `v8.mjs` checks the Share fallbacks, per-track feel, the chord library (including v8.1's movable power and barre chords, the fret stepper, chart-order codes and Drop D power chords; v8.2's low-E-left detail neck and no finger numbers), the metronome (beat ticks in 4/4, 3/4 and 6/8, the beat-1 accent, the count-in, the fixed 0.5× default-track level, sync through loops, BPM changes and Back to start, the JSON round trip and MIDI), and that nothing scrolls at 390×844, 390×650 and 360×640. `v9.mjs` covers the Sounds: no Sound file is requested before first paint, the Sound list (5 options, keyboard, undo, saved), Nylon for new tracks and old files, bass an octave down with the tab unchanged, MIDI programs and octave, JSON round trip, Play waiting and starting by itself, the Nylon fallback, offline replay from the cache, every sample's onset and tuning, rendered notes on time and in tune, the metronome level, all Sounds matched in loudness, credits, no scroll at the 3 sizes, and (locally) first-load time against v8.2. `v91.mjs` covers the lyrics sheet: newlines saved and reloaded, old notes, JSON and Share round trips, no lyrics in MIDI, the 5000 limit, header chips and jumps, quick labels, playback carrying on while the sheet opens, Restart while playing (the first scheduled note and click at the loop-start downbeat, old notes cancelled or faded), with the loop off and while stopped, the R/Home keys, no page scroll at the 3 sizes and with the keyboard up, rollback safety through v9 and v7, and (locally) first-load time against v9. `midi.mjs` parse-tests the MIDI encoder and the chord data in Node.
 
 ```sh
-cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs, v9.mjs
+cd tests && npm install && CHROME_PATH=/usr/bin/google-chrome npm test   # midi.mjs, roundtrip.mjs, v8.mjs, v9.mjs, v91.mjs
 ```
 
-Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `node loadbench.mjs` measures a cold first load (bytes, requests, DOMContentLoaded and load), and `node bench.mjs` times redraws and edits. To go back to v8.2 (or v7), see [docs/ROLLBACK.md](docs/ROLLBACK.md).
+Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `node loadbench.mjs` measures a cold first load (bytes, requests, DOMContentLoaded and load), and `node bench.mjs` times redraws and edits. To go back to v9 (or v8.2, v7), see [docs/ROLLBACK.md](docs/ROLLBACK.md).
 
 ## MIDI export
 
@@ -113,6 +116,7 @@ Add `BASE=https://jeremylegalrecords.com/guitar-tab/` to test the live site. `no
 - It's a Type 1 file at PPQ 480, the same ticks as the JSON. Track 0 holds the tempo, time signature and loop markers. Each guitar track is its own named track on its own channel (1–3), with its Sound's GM program (Nylon / Spanish nylon 25, Clean electric 28, Upright bass 33, Electric bass 34) and CC7 = volume. Bass tracks are written an octave below the tab, like they sound; the `s3f7` text events still name the tab's string and fret.
 - **All tracks includes muted or unsoloed tracks.** They're labelled `(muted)` / `(not soloed)` and keep their volume.
 - Pitch = open string + fret. Each note carries a `s3f7`-style text event, so the string and fret can be rebuilt.
+- Lyrics are not exported.
 - Muted notes are short at velocity 30. Hammer-on and pull-off are legato. Bends, slides and vibrato are not exported yet.
 - Details: [guide](docs/USER-GUIDE.md#midi-export).
 
@@ -125,6 +129,7 @@ All of these are planned, with no promised dates:
 - **Let-ring / sustain**, plus palm-mute, harmonics and tapping
 - **Sliding-strip tuner mode**
 - **More chords** (more 7ths, add9, movable 7th/sus shapes, custom shapes) and a chord-name row above the tab
+- **Lyrics pinned to bars** (a line tied to a bar, shown under the tab while it plays)
 - **Koala export**
 
 ## Publishing (maintainers)

@@ -1,5 +1,35 @@
 # Rollback
 
+## v9.1 → v9
+
+v9.1 (lyrics sheet, section chips, Restart in the scheduler) keeps schemaVersion 5 and adds no new fields: the lyrics are
+the existing notes field `idea`, now up to 5000 characters with line breaks (v9 allowed 500). Two annotated tags mark v9:
+
+| Repo | Tag | Commit |
+|---|---|---|
+| maximini22/github-tab | `v9-stable` | `429abec` |
+| maximini22/jeremylegalrecords.com | `guitar-tab-v9-stable` | `870b2d8` |
+
+Roll back with the steps under "Roll back the live JLR copy" and "Roll back the GitHub Pages copy" below, using these
+tags (`git rm -r -q guitar-tab && git checkout guitar-tab-v9-stable -- guitar-tab`, and
+`git rm -r -q . && git checkout v9-stable -- .`). The v9 service worker (`guitar-tab-v9` / `jlr-guitar-tab-v9`) deletes
+the v9.1 shell cache on activate; the Sound cache `gt-tones-v1` is shared and stays.
+
+**What happens to lyrics** (checked by `tests/v91.mjs` against v9 and v7 worktrees):
+
+- v9 and v7 both accept a saved library or file whose notes are up to 5000 characters (their validators already allowed
+  5000) and open it; they keep only the **first 500 characters** of each project's notes. In v9 and v7 the notes field
+  is one line, so line breaks aren't shown there; they're still in the data unless the notes are edited in that version
+  (then the text is saved as one line, as typed).
+- v9.1 also keeps a full copy of every project's lyrics longer than 500 characters under a separate browser key
+  (`jlr-guitar-tab:lyrics-full`) that v9 and v7 don't touch. On going forward to v9.1 again, a project whose notes came
+  back cut to exactly 500 characters, and still match the start of that copy, gets its full lyrics back. Other changes
+  made in v9/v7 (BPM, notes on the tab…) are kept. If the notes were edited in the older version, that edit wins and the
+  copy is not used.
+- A `.json` exported from v9.1 keeps the full lyrics, so Export is still the safe backup before rolling back.
+- Rolling back to v7 (below) behaves the same way: v7 opens the library and cuts each project's notes to 500 characters,
+  and the backup copy restores them when you come forward to v9.1.
+
 ## v9 → v8.2
 
 v9 (sampled Sounds per track) adds one optional per-track field, `tone`, and keeps schemaVersion 5. v8.2 ignores it, so

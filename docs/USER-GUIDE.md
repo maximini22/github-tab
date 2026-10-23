@@ -6,7 +6,7 @@ Guitar Tab is a quick way to get a guitar idea down as tab on your phone before 
 - About page: https://jeremylegalrecords.com/guitar-tab/
 - The old address, https://maximini22.github.io/github-tab/app/, still works. Saved work doesn't carry over between web addresses, so **Export** your projects at the old address and **Import** them at the new one.
 
-Contents: [The screen](#the-screen) · [Writing notes](#writing-notes) · [The step editor](#the-step-editor) · [Tracks (up to 3)](#tracks-up-to-3) · [Mixer: volume, mute, solo](#mixer-volume-mute-solo) · [Transport, ruler and loop](#transport-ruler-and-loop) · [BPM, time signature and grid](#bpm-time-signature-and-grid) · [The rhythm row](#the-rhythm-row) · [Tunings](#tunings) · [Undo and redo](#undo-and-redo) · [Idea notes](#idea-notes) · [The menu](#the-menu) · [Saving, export and import](#saving-export-and-import) · [Checking a round trip by hand](#checking-a-round-trip-by-hand) · [Automated test](#automated-test) · [If you know a DAW](#if-you-know-a-daw) · [Keyboard](#keyboard) · [File format](#file-format-schemaversion-4) · [MIDI export](#midi-export)
+Contents: [The screen](#the-screen) · [Writing notes](#writing-notes) · [The step editor](#the-step-editor) · [Tracks (up to 3)](#tracks-up-to-3) · [Mixer: volume, mute, solo](#mixer-volume-mute-solo) · [Transport, ruler and loop](#transport-ruler-and-loop) · [BPM, time signature and grid](#bpm-time-signature-and-grid) · [The rhythm row](#the-rhythm-row) · [Tunings](#tunings) · [Undo and redo](#undo-and-redo) · [Lyrics and notes](#lyrics-and-notes) · [The menu](#the-menu) · [Saving, export and import](#saving-export-and-import) · [Checking a round trip by hand](#checking-a-round-trip-by-hand) · [Automated test](#automated-test) · [If you know a DAW](#if-you-know-a-daw) · [Keyboard](#keyboard) · [File format](#file-format-schemaversion-4) · [MIDI export](#midi-export)
 
 ---
 
@@ -22,7 +22,7 @@ The editor is built to fit a phone screen with no page scrolling. It has been ch
 | Track strip | One row per track: colour, name, tuning, **M**, **S** and a volume slider. Tap the name to arm that track for editing. **+ Track (n/3)** appears while there's room. |
 | Ruler | Top lane: bar numbers and the loop brace. Bottom lane: beat counts (1 e & a 2 …, and `trip`/`let` on triplet grids). The green playhead line runs through the ruler and the grid. |
 | Tab grid | Six string lanes, high e at the top and low string at the bottom, the way you see them when you play. Underneath, the rhythm rows: `len` (note values), beams and flags, and triplet marks. See [The rhythm row](#the-rhythm-row). |
-| Idea notes | A text field pinned to the bottom. See [Idea notes](#idea-notes). |
+| Lyrics / notes | A box pinned to the bottom showing the first lines. Tap it to open the lyrics sheet. See [Lyrics and notes](#lyrics-and-notes). |
 
 On first use, a three-line hint explains tapping, arming and looping. **Got it** hides it for good, in this browser.
 
@@ -184,11 +184,21 @@ Changing a tuning keeps your fret numbers and changes the pitch. An imported tra
 
 ## Undo and redo
 
-Undo and redo are in the toolbar, with up to 100 steps per project. Undo covers notes, steps, bars, tracks (add, delete, rename, tuning), BPM, time signature, loop, grid and title. Mixer moves and idea notes aren't undo steps. Importing a file clears the history.
+Undo and redo are in the toolbar, with up to 100 steps per project. Undo covers notes, steps, bars, tracks (add, delete, rename, tuning), BPM, time signature, loop, grid and title. Mixer moves and lyrics aren't undo steps (while typing lyrics, the text box's own Ctrl/⌘+Z works). Importing a file clears the history.
 
-## Idea notes
+## Lyrics and notes
 
-The pinned field at the bottom ("Idea notes…") is a short scratchpad of up to 500 characters for the project: lyrics, a chord name, "try this faster". It saves as you type and is included in exports.
+The box pinned to the bottom of the screen shows the first one or two lines of the project's lyrics or notes. Tap it to open the **lyrics sheet** (v9.1), which covers the screen:
+
+- **Writing:** a multi-line text area for up to **5000 characters**, with a count at the top. Line breaks are kept. It saves as you type (about 0.3 s after you stop, and straight away if you close or leave the page). **Done** or Esc closes it. Long lyrics scroll inside the sheet; the page itself never scrolls.
+- **Section headers:** a line that is only a label in square brackets, such as `[Verse]`, `[Chorus]`, `[Bridge]` or `[Verse 2]`, is a header. Headers are drawn bold on a teal band, and each becomes a **chip** in the row at the top. Tap a chip to jump to that section; the chip of the section you're reading stays lit as you scroll. Brackets inside a line (`play it [softly]`) are just text.
+- **Quick labels:** the second row (**+ Verse**, **+ Pre-chorus**, **+ Chorus**, **+ Bridge**, **+ Hook**, **+ Intro**, **+ Outro**) puts that header on its own line at the cursor, after a blank line, with the cursor ready on the line below. A second Verse becomes `[Verse 2]`, then `[Verse 3]`. Tapping a label or chip keeps the phone keyboard up.
+- **Keyboard on screen:** the sheet shrinks to the space above the phone keyboard and keeps the line you're typing in view. On a very short screen the chip rows fold away while the keyboard is up.
+- **Writing over a loop:** opening the sheet, typing and closing it never stop the music. The **mini transport** at the bottom of the sheet has **Restart**, **Play/Pause**, **Stop**, the **metronome** and the bar|beat position.
+  - **Restart** (the big button; it says **Loop · bar N** or **Bar 1**) goes back to the loop's first downbeat, or to bar 1 with the loop off. While playing, the jump happens inside the audio scheduler 40 ms ahead, so the downbeat note and the beat-1 click start together on the same sample; notes that were already queued are dropped and notes still ringing fade out in a few milliseconds, so nothing doubles up or hangs. While stopped it moves the playhead there.
+  - With a keyboard attached: **R** or **Home** restarts and **Space** plays or pauses, when you're not typing in the text (while typing, keys type).
+- **Saving and files:** the lyrics are the project's `idea` field, so they're auto-saved and included in exports, Import and Share with their line breaks. When Share falls back to text, the lyrics go under the tab after a "Lyrics" line. They are not in the MIDI file.
+- Notes written in older versions (one line, up to 500 characters) open here as they are.
 
 ## The menu
 
@@ -234,11 +244,11 @@ Use this when you want to be sure an export brings everything back:
 
 1. Make a project with 3 tracks and give each track a different tuning. Add a few notes on each, including one **x Muted** note.
 2. Set the BPM to something other than 90 (for example 137), and drag a loop over one bar in the ruler's top lane.
-3. Mix the tracks: change the volumes, solo two tracks and mute one. Type something in Idea notes, and change the Grid.
+3. Mix the tracks: change the volumes, solo two tracks and mute one. Type a few lines in the lyrics sheet (with a `[Chorus]` header), and change the Grid.
 4. Note what it looks and sounds like (press Play), then **☰ → Export project (.json)**.
 5. Clear the site's data (browser settings → site settings → clear data), or open the app in another browser or device.
 6. Open the app, then **☰ → Import (.json)** → choose the file → **Replace** (or Merge) → confirm.
-7. Check the result: same title, BPM, time signature, loop, grid, idea notes; same tracks with their names, tunings, volumes and M/S states; same notes in the same places (switch between tracks to compare). Press Play: only the soloed, unmuted tracks should sound, at their volumes.
+7. Check the result: same title, BPM, time signature, loop, grid, lyrics (with their line breaks); same tracks with their names, tunings, volumes and M/S states; same notes in the same places (switch between tracks to compare). Press Play: only the soloed, unmuted tracks should sound, at their volumes.
 
 ## Automated test
 
@@ -276,6 +286,18 @@ Use this when you want to be sure an export brings everything back:
 7. **Measured sound:** every sample starts within 3 ms (no leading silence) and is within 20 cents of its tuning note; rendered notes of every Sound sound within 2 ms of a metronome click scheduled the same way and within 15 cents of the tab (− 12 for bass); the metronome level; Sounds matched within 1.5 dB.
 8. **No synth left, credits (NOTICE, menu, landing), the service-worker cache name, no scroll at 390×844, 390×650 and 360×640, and (locally) first-load timing against v8.2.**
 
+`tests/v91.mjs` covers the lyrics sheet (v9.1):
+
+1. **Text:** typed line breaks are saved, autosaved within ~0.3 s, kept through a reload (even one right after typing), shown in the 2-line preview; Escape closes.
+2. **Old notes:** a v4 (v7-era) library's one-line notes open in the sheet.
+3. **Headers:** only lines that are just `[Label]` count; chips in order; header lines painted by the mirror layer with the same font, box and wrapping as the text; a chip tap scrolls that header to the top (mirror follows), the active chip follows hand scrolling.
+4. **Quick labels:** placement, the caret, the keyboard staying up, `[Verse 2]` numbering, native undo.
+5. **Limit:** 5000 characters (paste cut, typing stops, a label that would overflow is refused, a 5000-character text with 1666 line breaks survives a reload, files over 5000 are rejected).
+6. **Files:** JSON export/import and the shared `.json.txt` keep the lyrics exactly; the text share has them under the tab; the MIDI has no lyric events or text.
+7. **Writing while looping:** opening the sheet and typing don't stop or restart playback; Restart while playing is a hand-off 40 ms ahead whose first scheduled note (the loop's bar-2 note) and accented click are both at time 0, with every queued old note cancelled and none left ringing; clicks then every beat in sync; no doubled notes; 6 quick taps; R and Home; R while typing types; Restart with the loop off (bar 1) and while stopped (moves the playhead); the metronome toggle in the sheet; R on the main screen.
+8. **Fit:** no page scroll with the sheet open at 390×844, 390×650 and 360×640, or with the keyboard up (390×470, 360×330 viewports), the caret kept in view, Restart always visible; the main screen still fits with the preview box.
+9. **Rollback (local):** v9 and v7 (from git worktrees) open the library and cut the notes to 500 characters; coming back after they saved a change restores the full lyrics from the backup copy, but an edit made to the notes in the older version is kept. Also the service-worker cache name and first-load time against v9.
+
 `tests/midi.mjs` checks the encoder on its own in Node with an independent parser (`midi-file`, a test-only dependency). It covers both modes, 4/4, 3/4, 2/4 and 6/8, muted and hammer-on/pull-off rules, file names, frets 17–22 (pitch, position text, and that import accepts 22 and rejects 23), and the v7 grids: all 21 value × style tick sizes, bar-line restarts, length names, v3 grid migration, and that triplet, 64th-triplet and dotted-64th notes land on exact MIDI ticks. For v8 it also checks schema 5 (a mixed straight + triplet project's MIDI ticks, parse-back, the v7 copy, unknown styles, newer files) and the chord data: all 30 E-standard cards give the right notes with the root in the bass, × strings skipped, chart-order codes, the 12 power cards (F#5 244, A5 577, C5 x355), 2-note versions, the fret-22 cap, the 6th↔5th pair, Drop D r-r-r power chords, the movable barre shapes, box orientation and string labels, code search, and the tuning-aware names. `SAMPLE_DIR=… node midi.mjs` also writes `sample.mid`, `sample-all.mid` and `sample-track1.mid`.
 
 ```sh
@@ -285,7 +307,8 @@ node midi.mjs                                 # MIDI encoder, model and chord da
 CHROME_PATH=/usr/bin/google-chrome node roundtrip.mjs
 CHROME_PATH=/usr/bin/google-chrome node v8.mjs
 CHROME_PATH=/usr/bin/google-chrome node v9.mjs
-npm test                                      # all four
+CHROME_PATH=/usr/bin/google-chrome node v91.mjs
+npm test                                      # all five
 # against the live site instead of a local copy:
 BASE=https://jeremylegalrecords.com/guitar-tab/ node roundtrip.mjs
 ```
@@ -306,7 +329,7 @@ It prints one PASS/FAIL line per check and exits non-zero on any failure. `node 
 | Insert / delete time | **+ Insert step** / **− Delete step** (all tracks) |
 | Undo history | **Undo / Redo** (100 steps) |
 | Spacebar play | **Space** plays and pauses |
-| Project notes / notepad | **Idea notes** field |
+| Project notes / notepad / lyric sheet | The **lyrics sheet** (tap the notes box) |
 | Export MIDI | **☰ → Export MIDI (.mid)**: all tracks in one file, or one track. See [MIDI export](#midi-export). |
 | Step-input / step-record | The [step editor](#the-step-editor): **‹ Back step**, **Next step ›**, **« Bar**, **Bar »** |
 
@@ -317,7 +340,7 @@ When a keyboard is attached:
 | Key | Action |
 |---|---|
 | Space | Play / pause |
-| Home | Back to start |
+| Home or R | Back to start (while playing: Restart at the loop's first downbeat) |
 | L | Loop on/off |
 | M | Metronome on/off |
 | ← → | Move one grid step |
@@ -328,7 +351,9 @@ When a keyboard is attached:
 | T | Triplet on/off (armed track) |
 | Ctrl/⌘+Z | Undo |
 | Shift+Ctrl/⌘+Z or Ctrl+Y | Redo |
-| Esc | Close the chord library (detail first), the picker or the menu |
+| Esc | Close the lyrics sheet, the chord library (detail first), the picker or the menu |
+
+With the lyrics sheet open and the text not focused: **Space** play/pause, **R** or **Home** Restart, **L** loop, **M** metronome, **Esc** close. While you type in the text, keys type (Esc still closes).
 
 With the picker open, type a fret number (0–22; for two digits, type them quickly), **x** for muted, or Backspace/Delete to clear. ← → step back and forward, and ↑ ↓ change string, without closing it.
 
@@ -375,8 +400,9 @@ Times are in ticks at **480 per quarter note** (PPQ 480), and pitches are MIDI n
 - **Techniques allowed in files:** muted, hammer-on, pull-off, slide, bend, vibrato, palm-mute, harmonic, tap, let-ring. Today the editor creates **muted** only. The others are kept if a file has them, but there are no buttons for them yet.
 - **Metronome:** `metronome` (since v8.2) is optional, so the schemaVersion stays 5: older files without it open with the click off, and v8/v8.1 ignore it. The v7 copy kept in the browser leaves it out.
 - **Sound:** a track's `tone` (since v9) is optional, so the schemaVersion stays 5: files without it, or with an unknown value, open as Nylon, and v8.x ignores it. The v7 copy kept in the browser leaves it out.
+- **Lyrics:** `idea` (since v9.1) holds up to 5000 characters with line breaks; the schemaVersion stays 5. v9 and v7 accept such files but keep only the first 500 characters (see [ROLLBACK](ROLLBACK.md)).
 - **Not in files:** the playhead position, which is kept per project in this browser only.
-- **Limits:** 3 tracks (larger imports keep the first 3), 999 bars, 20,000 notes per track, a 120-character title, 60-character track names and 500-character idea notes.
+- **Limits:** 3 tracks (larger imports keep the first 3), 999 bars, 20,000 notes per track, a 120-character title, 60-character track names and 5000-character lyrics/notes (`idea`; 500 before v9.1).
 
 ## MIDI export
 

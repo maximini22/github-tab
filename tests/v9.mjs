@@ -209,7 +209,7 @@ try {
   const offSch = await A.playFor(500);
   check('offline: Play plays the cached samples (clean + ebass scheduled)', offSch.some((n) => n.tone === 'clean') && offSch.some((n) => n.tone === 'ebass' && n.sound === n.midi - 12), JSON.stringify(offSch.slice(0, 4)));
   const cs = await A.page.evaluate(async () => { const out = {}; for (const k of await caches.keys()) { const c = await caches.open(k); out[k] = (await c.keys()).map((r) => new URL(r.url).pathname.split('/').slice(-2).join('/')); } return out; });
-  const shellK = Object.keys(cs).find((k) => /guitar-tab-v9$/.test(k));
+  const shellK = Object.keys(cs).find((k) => /guitar-tab-v9(-\d+)?$/.test(k));
   check('caches: gt-tones-v1 holds exactly the tones used (nylon, upright, clean, ebass: json + mp3); the v9 shell cache holds no tones', cs['gt-tones-v1'] && cs['gt-tones-v1'].length === 8 && !cs['gt-tones-v1'].some((x) => /spanish/.test(x)) && shellK && !cs[shellK].some((x) => /^tones\//.test(x)), JSON.stringify(Object.fromEntries(Object.entries(cs).map(([k, v]) => [k, k === 'gt-tones-v1' ? v : v.length]))));
   await A.page.setOfflineMode(false);
 
@@ -264,7 +264,7 @@ try {
     return { audio: await g(app + 'js/audio.js'), sw: await g(app + 'sw.js'), app: await g(app + 'index.html'), land: await g(app + '../index.html'), notice: await g(app + '../NOTICE') }; }, APP);
   const oscs = (src.audio.match(/createOscillator/g) || []).length;
   check('no synth: audio.js has no pluck / Karplus voice; the only oscillator is the metronome blip', src.audio.length > 0 && !/pluck|karplus/i.test(src.audio) && oscs <= 1, 'oscillators ' + oscs);
-  check('sw.js: cache ' + (LIVE && /jeremylegal/.test(BASE) ? 'jlr-guitar-tab-v9' : 'guitar-tab-v9') + ', tones cache gt-tones-v1', new RegExp("var VERSION = '" + (/jeremylegal/.test(BASE) ? 'jlr-' : '') + "guitar-tab-v9'").test(src.sw) && /'gt-tones-v1'/.test(src.sw), (src.sw.match(/var VERSION = '[^']+'/) || [''])[0]);
+  check('sw.js: cache ' + (LIVE && /jeremylegal/.test(BASE) ? 'jlr-guitar-tab-v9' : 'guitar-tab-v9') + ' (or a v9.x point release), tones cache gt-tones-v1', new RegExp("var VERSION = '" + (/jeremylegal/.test(BASE) ? 'jlr-' : '') + "guitar-tab-v9(-\\d+)?'").test(src.sw) && /'gt-tones-v1'/.test(src.sw), (src.sw.match(/var VERSION = '[^']+'/) || [''])[0]);
   check('credits: NOTICE has the FluidR3 MIT notice and the CC0 courtesy credits', /Copyright \(c\) 2000-2002, 2008 Frank Wen; 2008 Toby Smithe/.test(src.notice) && /Permission is hereby granted/.test(src.notice) && /FreePats/.test(src.notice) && /D\. Smolken/.test(src.notice) && /Karoryfer Samples/.test(src.notice) && /CC0 1\.0/.test(src.notice), 'NOTICE ' + src.notice.length + ' chars');
   check('credits: app menu and landing footer name FluidR3 GM (MIT), FreePats, D. Smolken, Karoryfer Samples (CC0) and link NOTICE', [src.app, src.land].every((h) => /FluidR3 GM/.test(h) && /Frank Wen/.test(h) && /FreePats/.test(h) && /D\. Smolken/.test(h) && /Karoryfer Samples/.test(h) && /CC0/.test(h) && /blob\/main\/NOTICE/.test(h)));
   check('browser-only: no download / app-store links', [src.app, src.land].every((h) => !/apps\.apple\.com|play\.google\.com|\bdownload the app\b/i.test(h)));
